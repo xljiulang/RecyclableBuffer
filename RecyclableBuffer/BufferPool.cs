@@ -7,7 +7,7 @@ namespace RecyclableBuffer
     /// 表示一个可回收的字节数组池，基于 <see cref="ArrayPool{T}"/> 实现。
     /// 用于高效地租用和归还字节数组，减少内存分配和垃圾回收压力。
     /// </summary>
-    public sealed class BufferPool
+    public class BufferPool
     {
         private readonly ArrayPool<byte> _pool;
 
@@ -72,6 +72,20 @@ namespace RecyclableBuffer
         public void Return(byte[] buffer)
         {
             this._pool.Return(buffer);
+        }
+
+        /// <summary>
+        /// 生成适合当前池配置的随机小缓冲区和大缓冲区大小。
+        /// </summary>
+        /// <returns></returns>
+        public virtual (int smallBufferSize, int largeBufferSize) GenerateBufferSizes()
+        {
+            // 引入大缓冲区，是为了降低小缓冲区数量过多而爆桶的几率，同时也能让数据尽量连续，减少分段数量
+            // 使用随机缓冲区大小，是为了降低多个RecyclableBufferWriter实例的缓冲区大小过于集中在某个固定值导致爆桶的几率
+            var splitterSize = (this.MinArrayLength + this.MaxArrayLength) * 7 / 20;
+            var smallBufferSize = Random.Shared.Next(this.MinArrayLength, splitterSize);
+            var largeBufferSize = Random.Shared.Next(splitterSize, this.MaxArrayLength);
+            return (smallBufferSize, largeBufferSize);
         }
     }
 }

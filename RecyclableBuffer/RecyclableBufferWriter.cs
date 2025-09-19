@@ -52,12 +52,7 @@ namespace RecyclableBuffer
         public RecyclableBufferWriter(BufferPool pool)
         {
             ArgumentNullException.ThrowIfNull(pool);
-
-            // 引入大缓冲区，是为了降低小缓冲区数量过多而爆桶的几率，同时也能让数据尽量连续，减少分段数量
-            // 使用随机缓冲区大小，是为了降低多个RecyclableBufferWriter实例的缓冲区大小过于集中在某个固定值导致爆桶的几率
-            var splitterSize = (pool.MinArrayLength + pool.MaxArrayLength) * 7 / 20;
-            var largeBufferSize = Random.Shared.Next(splitterSize, pool.MaxArrayLength);
-            var smallBufferSize = Random.Shared.Next(pool.MinArrayLength, splitterSize);
+            var (smallBufferSize, largeBufferSize) = pool.GenerateBufferSizes();
 
             this._pool = pool;
             this._largeBufferSize = largeBufferSize;

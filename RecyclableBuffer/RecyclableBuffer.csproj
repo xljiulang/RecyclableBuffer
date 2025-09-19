@@ -5,6 +5,9 @@
 		<Nullable>enable</Nullable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Description>可复用的多内存片段缓冲区</Description>
+		<PackageProjectUrl>https://github.com/xljiulang/RecyclableBuffer</PackageProjectUrl>
 	</PropertyGroup>
 
 </Project>

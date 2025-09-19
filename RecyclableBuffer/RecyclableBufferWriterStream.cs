@@ -9,12 +9,10 @@ namespace RecyclableBuffer
     sealed class RecyclableBufferWriterStream : Stream
     {
         private readonly RecyclableBufferWriter _bufferWriter;
-        private readonly bool _ownsBufferWriter;
 
-        public RecyclableBufferWriterStream(RecyclableBufferWriter _bufferWriter, bool ownsBufferWriter)
+        public RecyclableBufferWriterStream(RecyclableBufferWriter _bufferWriter)
         {
             this._bufferWriter = _bufferWriter;
-            this._ownsBufferWriter = ownsBufferWriter;
         }
 
         public override bool CanRead => false;
@@ -78,16 +76,6 @@ namespace RecyclableBuffer
         {
             this._bufferWriter.Write(buffer.Span);
             return ValueTask.CompletedTask;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-
-            if (this._ownsBufferWriter)
-            {
-                this._bufferWriter.Dispose();
-            }
         }
     }
 }

@@ -14,6 +14,7 @@ namespace RecyclableBuffer
     {
         private bool _disposed = false;
         private readonly BufferPool _pool;
+        private readonly int _defaultSizeHint;
         private readonly List<RentedBuffer> _buffers = [];
 
         /// <summary>
@@ -36,7 +37,9 @@ namespace RecyclableBuffer
         public RecyclableBufferWriter(BufferPool pool)
         {
             ArgumentNullException.ThrowIfNull(pool);
+
             this._pool = pool;
+            this._defaultSizeHint = Random.Shared.Next(pool.MinArrayLength, pool.MaxArrayLength);
         }
 
         /// <summary>
@@ -107,6 +110,11 @@ namespace RecyclableBuffer
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
 
+            if (sizeHint <= 0)
+            {
+                sizeHint = this._defaultSizeHint;
+            }
+
             var buffer = new RentedBuffer(_pool, sizeHint);
             this._buffers.Add(buffer);
             return buffer;
@@ -116,12 +124,11 @@ namespace RecyclableBuffer
         /// <summary>
         /// 将缓冲区内容包装为 <see cref="Stream"/>，可选是否拥有缓冲区写入器的所有权。
         /// </summary>
-        /// <param name="ownsBufferWriter">是否在流释放时释放缓冲区写入器。</param>
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public Stream AsStream(bool ownsBufferWriter = false)
+        public Stream AsStream()
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
-            return new RecyclableBufferWriterStream(this, ownsBufferWriter);
+            return new RecyclableBufferWriterStream(this);
         }
 
         private ReadOnlySequence<byte> GetWrittenSequence()

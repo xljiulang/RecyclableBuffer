@@ -39,7 +39,23 @@ namespace RecyclableBuffer
             ArgumentNullException.ThrowIfNull(pool);
 
             this._pool = pool;
-            this._defaultSizeHint = Random.Shared.Next(pool.MinArrayLength, pool.MaxArrayLength);
+            this._defaultSizeHint = GetRandomSizeHint(pool);
+        }
+
+        /// <summary>
+        /// 生成随机的默认缓冲区大小提示，以降低多个实例租用到相同大小的缓冲区导致触发创建池外的缓冲区。
+        /// </summary>
+        /// <param name="pool"></param>
+        /// <returns></returns>
+        private static int GetRandomSizeHint(BufferPool pool)
+        {
+            var value = Random.Shared.Next(pool.MinArrayLength, pool.MaxArrayLength) - 1;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            return value + 1;
         }
 
         /// <summary>

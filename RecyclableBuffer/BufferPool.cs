@@ -45,6 +45,8 @@ namespace RecyclableBuffer
 
         private BufferPool(int minArrayLength, int maxArrayLength, int maxArraysPerBucket, ArrayPool<byte> pool)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(minArrayLength);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxArrayLength);
             ArgumentOutOfRangeException.ThrowIfGreaterThan(minArrayLength, maxArrayLength);
 
             this.MinArrayLength = minArrayLength;
@@ -59,7 +61,7 @@ namespace RecyclableBuffer
         /// <param name="minimumLength">字节数组的最小长度。</param>
         /// <returns>租用的字节数组。</returns>
         public byte[] Rent(int minimumLength)
-        { 
+        {
             return this._pool.Rent(minimumLength);
         }
 

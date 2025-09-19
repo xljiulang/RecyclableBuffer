@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -13,6 +14,8 @@ namespace RecyclableBuffer
     public sealed class RecyclableBufferWriter : IBufferWriter<byte>, IDisposable
     {
         private bool _disposed = false;
+        private RentedBuffer? _lastBuffer;
+
         private readonly BufferPool _pool;
         private readonly int _defaultSizeHint;
         private readonly List<RentedBuffer> _buffers = [];
@@ -65,7 +68,19 @@ namespace RecyclableBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Advance(int count)
         {
-            CollectionsMarshal.AsSpan(this._buffers)[^1].Advance(count);
+            if (this._lastBuffer == null)
+            {
+                Throw();
+            }
+            else
+            {
+                this._lastBuffer.Advance(count);
+            }
+
+            static void Throw()
+            {
+                throw new InvalidOperationException("No buffer available to advance. Call GetMemory or GetSpan before calling Advance.");
+            }
         }
 
         /// <summary>
@@ -76,12 +91,18 @@ namespace RecyclableBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Memory<byte> GetMemory(int sizeHint = 0)
         {
-            var buffer = this.GetOrAddRentedBuffer(sizeHint);
-            var memory = buffer.GetMemory(sizeHint);
+            if (this._lastBuffer == null)
+            {
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+            }
+
+            var memory = this._lastBuffer.GetMemory(sizeHint);
             if (memory.IsEmpty)
             {
-                buffer = this.AddRentedBuffer(sizeHint);
-                memory = buffer.GetMemory(sizeHint);
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+                memory = this._lastBuffer.GetMemory(sizeHint);
+
+                Debug.Assert(memory.Length > 0);
             }
             return memory;
         }
@@ -94,28 +115,22 @@ namespace RecyclableBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<byte> GetSpan(int sizeHint = 0)
         {
-            var buffer = this.GetOrAddRentedBuffer(sizeHint);
-            var span = buffer.GetSpan(sizeHint);
+            if (this._lastBuffer == null)
+            {
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+            }
+
+            var span = this._lastBuffer.GetSpan(sizeHint);
             if (span.IsEmpty)
             {
-                buffer = this.AddRentedBuffer(sizeHint);
-                span = buffer.GetSpan(sizeHint);
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+                span = this._lastBuffer.GetSpan(sizeHint);
+
+                Debug.Assert(span.Length > 0);
             }
             return span;
         }
 
-        /// <summary>
-        /// 获取当前可用的 <see cref="RentedBuffer"/>，如无则新建。
-        /// </summary>
-        /// <param name="sizeHint">期望的最小长度。</param>
-        /// <returns>可用的 <see cref="RentedBuffer"/>。</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private RentedBuffer GetOrAddRentedBuffer(int sizeHint)
-        {
-            return this._buffers.Count == 0
-                ? AddRentedBuffer(sizeHint)
-                : CollectionsMarshal.AsSpan(this._buffers)[^1];
-        }
 
         /// <summary>
         /// 新增一个 <see cref="RentedBuffer"/> 并加入缓冲区列表。
@@ -185,6 +200,8 @@ namespace RecyclableBuffer
             {
                 buffer.Dispose();
             }
+
+            this._lastBuffer = null;
             this._buffers.Clear();
         }
     }

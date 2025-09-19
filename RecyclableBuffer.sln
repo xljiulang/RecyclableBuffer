@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36301.6
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecyclableBuffer", "RecyclableBuffer\RecyclableBuffer.csproj", "{74940945-E007-4CC1-B484-434E3D934D9B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecyclableBuffer.Benchmarks", "RecyclableBuffer.Benchmarks\RecyclableBuffer.Benchmarks.csproj", "{30C520AD-0D8D-4B69-B1FC-1C54D2896778}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74940945-E007-4CC1-B484-434E3D934D9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74940945-E007-4CC1-B484-434E3D934D9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74940945-E007-4CC1-B484-434E3D934D9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74940945-E007-4CC1-B484-434E3D934D9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30C520AD-0D8D-4B69-B1FC-1C54D2896778}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30C520AD-0D8D-4B69-B1FC-1C54D2896778}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30C520AD-0D8D-4B69-B1FC-1C54D2896778}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30C520AD-0D8D-4B69-B1FC-1C54D2896778}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BACF81C8-5E7E-4C40-9544-AC56ECC1BFC0}
+	EndGlobalSection
+EndGlobal

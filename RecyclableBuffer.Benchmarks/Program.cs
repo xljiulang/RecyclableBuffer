@@ -6,6 +6,11 @@ namespace RecyclableBuffer.Benchmarks
     {
         static void Main(string[] args)
         {
+#if DEBUG
+            var benchmark = new BuffersBenchmark();
+            benchmark.Setup();
+            benchmark.RecyclableBuffer_10();
+#endif
             var summary = BenchmarkRunner.Run(typeof(Program).Assembly);
         }
     }

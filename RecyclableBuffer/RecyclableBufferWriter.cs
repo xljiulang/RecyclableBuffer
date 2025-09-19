@@ -15,9 +15,21 @@ namespace RecyclableBuffer
     {
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
-
         private readonly BufferPool _pool;
-        private readonly int _defaultSizeHint;
+
+        /// <summary>
+        /// 大的缓冲区大小，优先用于初始分配。
+        /// </summary>
+        private readonly int _largeBufferSize;
+
+        /// <summary>
+        /// 小的缓冲区大小，优先用于后续分配。
+        /// </summary>
+        private readonly int _smallBufferSize;
+
+        /// <summary>
+        /// 当前写入器持有的所有租用缓冲区列表。
+        /// </summary>
         private readonly List<RentedBuffer> _buffers = [];
 
         /// <summary>
@@ -41,30 +53,22 @@ namespace RecyclableBuffer
         {
             ArgumentNullException.ThrowIfNull(pool);
 
-            this._pool = pool;
-            this._defaultSizeHint = GetRandomSizeHint(pool);
-        }
+            // 引入大缓冲区，是为了降低小缓冲区数量过多而爆桶的几率，同时也能让数据尽量连续，减少分段数量
+            // 使用随机缓冲区大小，是为了降低多个RecyclableBufferWriter实例的缓冲区大小过于集中在某个固定值导致爆桶的几率
+            var splitterSize = (pool.MinArrayLength + pool.MaxArrayLength) * 7 / 20;
+            var largeBufferSize = Random.Shared.Next(splitterSize, pool.MaxArrayLength);
+            var smallBufferSize = Random.Shared.Next(pool.MinArrayLength, splitterSize);
 
-        /// <summary>
-        /// 生成随机的默认缓冲区大小提示，以降低多个实例租用到相同大小的缓冲区导致触发创建池外的缓冲区。
-        /// </summary>
-        /// <param name="pool"></param>
-        /// <returns></returns>
-        private static int GetRandomSizeHint(BufferPool pool)
-        {
-            var value = Random.Shared.Next(pool.MinArrayLength, pool.MaxArrayLength) - 1;
-            value |= value >> 1;
-            value |= value >> 2;
-            value |= value >> 4;
-            value |= value >> 8;
-            value |= value >> 16;
-            return value + 1;
+            this._pool = pool;
+            this._largeBufferSize = largeBufferSize;
+            this._smallBufferSize = smallBufferSize;
         }
 
         /// <summary>
         /// 通知写入器已写入指定数量的字节。
         /// </summary>
         /// <param name="count">已写入的字节数。</param>
+        /// <exception cref="InvalidOperationException">如果没有可用缓冲区则抛出异常。</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Advance(int count)
         {
@@ -93,13 +97,15 @@ namespace RecyclableBuffer
         {
             if (this._lastBuffer == null)
             {
-                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+                var bufferSize = sizeHint <= 0 ? this._largeBufferSize : sizeHint;
+                this._lastBuffer = this.AddRentedBuffer(bufferSize);
             }
 
             var memory = this._lastBuffer.GetMemory(sizeHint);
             if (memory.IsEmpty)
             {
-                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+                var bufferSize = sizeHint <= 0 ? this._smallBufferSize : sizeHint;
+                this._lastBuffer = this.AddRentedBuffer(bufferSize);
                 memory = this._lastBuffer.GetMemory(sizeHint);
 
                 Debug.Assert(memory.Length > 0);
@@ -117,13 +123,15 @@ namespace RecyclableBuffer
         {
             if (this._lastBuffer == null)
             {
-                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+                var bufferSize = sizeHint <= 0 ? this._largeBufferSize : sizeHint;
+                this._lastBuffer = this.AddRentedBuffer(bufferSize);
             }
 
             var span = this._lastBuffer.GetSpan(sizeHint);
             if (span.IsEmpty)
             {
-                this._lastBuffer = this.AddRentedBuffer(sizeHint);
+                var bufferSize = sizeHint <= 0 ? this._smallBufferSize : sizeHint;
+                this._lastBuffer = this.AddRentedBuffer(bufferSize);
                 span = this._lastBuffer.GetSpan(sizeHint);
 
                 Debug.Assert(span.Length > 0);
@@ -132,25 +140,20 @@ namespace RecyclableBuffer
         }
 
 
+
         /// <summary>
         /// 新增一个 <see cref="RentedBuffer"/> 并加入缓冲区列表。
         /// </summary>
-        /// <param name="sizeHint">期望的最小长度。</param>
+        /// <param name="bufferSize">缓冲区大小。</param> 
         /// <returns>新创建的 <see cref="RentedBuffer"/>。</returns>
-        private RentedBuffer AddRentedBuffer(int sizeHint)
+        private RentedBuffer AddRentedBuffer(int bufferSize)
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
 
-            if (sizeHint <= 0)
-            {
-                sizeHint = this._defaultSizeHint;
-            }
-
-            var buffer = new RentedBuffer(_pool, sizeHint);
+            var buffer = new RentedBuffer(_pool, bufferSize);
             this._buffers.Add(buffer);
             return buffer;
         }
-
 
         /// <summary>
         /// 将缓冲区内容包装为 <see cref="Stream"/>，可选是否拥有缓冲区写入器的所有权。
@@ -162,8 +165,14 @@ namespace RecyclableBuffer
             return new RecyclableBufferWriterStream(this);
         }
 
+        /// <summary>
+        /// 获取已写入的所有缓冲区组成的只读字节序列。
+        /// </summary>
+        /// <returns>只读字节序列。</returns>
         private ReadOnlySequence<byte> GetWrittenSequence()
         {
+            ObjectDisposedException.ThrowIf(this._disposed, this);
+
             var buffers = CollectionsMarshal.AsSpan(this._buffers);
             if (buffers.Length == 0)
             {

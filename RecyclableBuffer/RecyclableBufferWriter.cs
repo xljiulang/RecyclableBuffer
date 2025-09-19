@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace RecyclableBuffer
@@ -18,31 +19,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取已写入的所有缓冲区组成的只读字节序列。
         /// </summary>
-        public ReadOnlySequence<byte> WrittenSequence
-        {
-            get
-            {
-                var buffers = CollectionsMarshal.AsSpan(this._buffers);
-                if (buffers.Length == 0)
-                {
-                    return ReadOnlySequence<byte>.Empty;
-                }
-
-                var first = new RentedSegment(buffers[0]);
-                if (buffers.Length == 1)
-                {
-                    return new ReadOnlySequence<byte>(first.Memory);
-                }
-
-                var last = first;
-                foreach (var buffer in buffers.Slice(1))
-                {
-                    last = last.Append(buffer);
-                }
-
-                return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
-            }
-        }
+        public ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
 
         /// <summary>
         /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用共享缓冲区池。
@@ -66,6 +43,7 @@ namespace RecyclableBuffer
         /// 通知写入器已写入指定数量的字节。
         /// </summary>
         /// <param name="count">已写入的字节数。</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Advance(int count)
         {
             CollectionsMarshal.AsSpan(this._buffers)[^1].Advance(count);
@@ -76,6 +54,7 @@ namespace RecyclableBuffer
         /// </summary>
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
         /// <returns>可写入的 <see cref="Memory{Byte}"/>。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Memory<byte> GetMemory(int sizeHint = 0)
         {
             var buffer = this.GetOrAddRentedBuffer(sizeHint);
@@ -93,6 +72,7 @@ namespace RecyclableBuffer
         /// </summary>
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
         /// <returns>可写入的 <see cref="Span{Byte}"/>。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<byte> GetSpan(int sizeHint = 0)
         {
             var buffer = this.GetOrAddRentedBuffer(sizeHint);
@@ -110,6 +90,7 @@ namespace RecyclableBuffer
         /// </summary>
         /// <param name="sizeHint">期望的最小长度。</param>
         /// <returns>可用的 <see cref="RentedBuffer"/>。</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private RentedBuffer GetOrAddRentedBuffer(int sizeHint)
         {
             return this._buffers.Count == 0
@@ -141,6 +122,29 @@ namespace RecyclableBuffer
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
             return new RecyclableBufferWriterStream(this, ownsBufferWriter);
+        }
+
+        private ReadOnlySequence<byte> GetWrittenSequence()
+        {
+            var buffers = CollectionsMarshal.AsSpan(this._buffers);
+            if (buffers.Length == 0)
+            {
+                return ReadOnlySequence<byte>.Empty;
+            }
+
+            var first = new RentedSegment(buffers[0]);
+            if (buffers.Length == 1)
+            {
+                return new ReadOnlySequence<byte>(first.Memory);
+            }
+
+            var last = first;
+            foreach (var buffer in buffers.Slice(1))
+            {
+                last = last.Append(buffer);
+            }
+
+            return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
         }
 
         /// <summary>

@@ -23,7 +23,7 @@ namespace RecyclableBuffer
 
         public override bool CanWrite => true;
 
-        public override long Length => this._bufferWriter.WrittenBuffer.Length;
+        public override long Length => this._bufferWriter.WrittenSequence.Length;
 
         public override long Position
         {

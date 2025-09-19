@@ -18,7 +18,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取已写入的所有缓冲区组成的只读字节序列。
         /// </summary>
-        public ReadOnlySequence<byte> WrittenBuffer
+        public ReadOnlySequence<byte> WrittenSequence
         {
             get
             {
@@ -124,6 +124,8 @@ namespace RecyclableBuffer
         /// <returns>新创建的 <see cref="RentedBuffer"/>。</returns>
         private RentedBuffer AddRentedBuffer(int sizeHint)
         {
+            ObjectDisposedException.ThrowIf(this._disposed, this);
+
             var buffer = new RentedBuffer(_pool, sizeHint);
             this._buffers.Add(buffer);
             return buffer;
@@ -137,6 +139,7 @@ namespace RecyclableBuffer
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
         public Stream AsStream(bool ownsBufferWriter = false)
         {
+            ObjectDisposedException.ThrowIf(this._disposed, this);
             return new RecyclableBufferWriterStream(this, ownsBufferWriter);
         }
 
@@ -155,6 +158,7 @@ namespace RecyclableBuffer
             {
                 buffer.Dispose();
             }
+            this._buffers.Clear();
         }
     }
 }

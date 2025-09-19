@@ -41,7 +41,7 @@ namespace RecyclableBuffer.Tests
             span[0] = 42;
             writer.Advance(1);
 
-            var sequence = writer.WrittenBuffer;
+            var sequence = writer.WrittenSequence;
             Assert.Equal(1, sequence.Length);
             Assert.Equal(42, sequence.First.Span[0]);
         }
@@ -50,7 +50,7 @@ namespace RecyclableBuffer.Tests
         public void WrittenBuffer_EmptyWhenNoData()
         {
             using var writer = new RecyclableBufferWriter();
-            Assert.Equal(0, writer.WrittenBuffer.Length);
+            Assert.Equal(0, writer.WrittenSequence.Length);
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace RecyclableBuffer.Tests
             var data = new byte[] { 1, 2, 3, 4 };
             stream.Write(data, 0, data.Length);
 
-            var sequence = writer.WrittenBuffer;
+            var sequence = writer.WrittenSequence;
             Assert.Equal(data.Length, sequence.Length);
             Assert.Equal(data, sequence.ToArray());
         }

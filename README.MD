@@ -1,5 +1,5 @@
 ## RecyclableBuffer
-基于 `ArrayPool<byte>` 实现的可复用 `IBufferWriter<byte>` 。大部分情况下性能略优于 [RecyclableMemoryStream](https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream)
+基于 `ArrayPool<byte>` 实现的可复用的多内存片段缓冲区 。大部分情况下性能略优于 [RecyclableMemoryStream](https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream)
 
 
 ### 使用示例

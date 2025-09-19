@@ -1,6 +1,8 @@
 ## RecyclableBuffer
 基于 `ArrayPool<byte>` 实现的可复用的多内存片段缓冲区 。大部分情况下性能略优于 [RecyclableMemoryStream](https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream)
 
+### Nuget
+[RecyclableBuffer](https://www.nuget.org/packages/RecyclableBuffer/)
 
 ### 使用示例
 **`IBufferWriter<byte>` 接口**

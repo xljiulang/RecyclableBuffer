@@ -7,7 +7,7 @@ namespace RecyclableBuffer.Benchmarks
     [MemoryDiagnoser]
     public class BuffersBenchmark
     {
-        private static readonly BufferPool pool = BufferPool.Default;
+        private static readonly BufferPool pool = BufferPool.Shared;
         private static readonly RecyclableMemoryStreamManager manager = new();
 
         [Params(1024, 2048, 4096)]

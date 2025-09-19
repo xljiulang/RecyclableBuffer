@@ -45,10 +45,10 @@ namespace RecyclableBuffer
         }
 
         /// <summary>
-        /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用默认缓冲区池。
+        /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用共享缓冲区池。
         /// </summary>
         public RecyclableBufferWriter()
-            : this(BufferPool.Default)
+            : this(BufferPool.Shared)
         {
         }
 
@@ -124,13 +124,7 @@ namespace RecyclableBuffer
         /// <returns>新创建的 <see cref="RentedBuffer"/>。</returns>
         private RentedBuffer AddRentedBuffer(int sizeHint)
         {
-            var minimumLength = sizeHint;
-            if (minimumLength == 0)
-            {
-                minimumLength = Random.Shared.Next(2, _pool.MaxArrayLength);
-            }
-
-            var buffer = new RentedBuffer(_pool, minimumLength);
+            var buffer = new RentedBuffer(_pool, sizeHint);
             this._buffers.Add(buffer);
             return buffer;
         }

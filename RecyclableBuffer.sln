@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecyclableBuffer", "Recycla
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecyclableBuffer.Benchmarks", "RecyclableBuffer.Benchmarks\RecyclableBuffer.Benchmarks.csproj", "{30C520AD-0D8D-4B69-B1FC-1C54D2896778}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecyclableBuffer.Tests", "RecyclableBuffer.Tests\RecyclableBuffer.Tests.csproj", "{672F1143-50E2-4401-91B3-54DA34CD3DBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{30C520AD-0D8D-4B69-B1FC-1C54D2896778}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30C520AD-0D8D-4B69-B1FC-1C54D2896778}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30C520AD-0D8D-4B69-B1FC-1C54D2896778}.Release|Any CPU.Build.0 = Release|Any CPU
+		{672F1143-50E2-4401-91B3-54DA34CD3DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{672F1143-50E2-4401-91B3-54DA34CD3DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{672F1143-50E2-4401-91B3-54DA34CD3DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{672F1143-50E2-4401-91B3-54DA34CD3DBA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

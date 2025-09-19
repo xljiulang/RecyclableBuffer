@@ -34,11 +34,11 @@ namespace RecyclableBuffer
         /// 初始化 <see cref="RentedBuffer"/> 实例，并从指定的数组池租用一个最小长度的缓冲区。
         /// </summary>
         /// <param name="pool">用于租用缓冲区的数组池。</param>
-        /// <param name="minimumLength">缓冲区的最小长度。</param>
-        public RentedBuffer(BufferPool pool, int minimumLength)
+        /// <param name="sizeHint">期望的最小长度。</param>
+        public RentedBuffer(BufferPool pool, int sizeHint)
         {
             this._pool = pool;
-            this._buffer = pool.Rent(minimumLength);
+            this._buffer = pool.Rent(sizeHint);
         }
 
         /// <summary>
@@ -61,22 +61,22 @@ namespace RecyclableBuffer
         /// <returns>满足长度要求的 <see cref="Span{Byte}"/>，否则返回空。</returns>
         public Span<byte> GetSpan(int sizeHint = 0)
         {
-            var target = this._buffer.AsSpan(this._length);
-            if (target.IsEmpty)
+            var span = this._buffer.AsSpan(this._length);
+            if (span.IsEmpty)
             {
                 return Span<byte>.Empty;
             }
 
             if (sizeHint == 0)
             {
-                return target;
+                return span;
             }
 
-            if (target.Length < sizeHint)
+            if (span.Length < sizeHint)
             {
                 return Span<byte>.Empty;
             }
-            return target;
+            return span;
         }
 
         /// <summary>
@@ -86,21 +86,22 @@ namespace RecyclableBuffer
         /// <returns>满足长度要求的 <see cref="Memory{Byte}"/>，否则返回空。</returns>
         public Memory<byte> GetMemory(int sizeHint = 0)
         {
-            var target = this._buffer.AsMemory(this._length);
-            if (target.IsEmpty)
+            var memory = this._buffer.AsMemory(this._length);
+            if (memory.IsEmpty)
             {
                 return Memory<byte>.Empty;
-            }
-            if (sizeHint == 0)
-            {
-                return target;
             }
 
-            if (target.Length < sizeHint)
+            if (sizeHint == 0)
+            {
+                return memory;
+            }
+
+            if (memory.Length < sizeHint)
             {
                 return Memory<byte>.Empty;
             }
-            return target;
+            return memory;
         }
 
         /// <summary>

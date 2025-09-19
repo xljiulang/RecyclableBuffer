@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 
 namespace RecyclableBuffer
 {
@@ -11,6 +12,11 @@ namespace RecyclableBuffer
         private readonly ArrayPool<byte> _pool;
 
         /// <summary>
+        /// 获取池中允许的最小数组长度。
+        /// </summary>
+        public int MinArrayLength { get; }
+
+        /// <summary>
         /// 获取池中允许的最大数组长度。
         /// </summary>
         public int MaxArrayLength { get; }
@@ -21,30 +27,41 @@ namespace RecyclableBuffer
         public int MaxArraysPerBucket { get; }
 
         /// <summary>
-        /// 获取默认的 <see cref="BufferPool"/> 实例。
-        /// 默认最大数组长度为 128KB，每个桶最多 100 个数组。
+        /// 获取共享的 <see cref="BufferPool"/> 实例。
+        /// 默认最小数组长度为 8KB，最大数组长度为 1MB，每个桶最多 50 个数组。
         /// </summary>
-        public static BufferPool Default { get; } = new BufferPool(128 * 1024, 100);
+        public static BufferPool Shared { get; } = new BufferPool(8 * 1024, 1024 * 1024, 50, ArrayPool<byte>.Shared);
 
         /// <summary>
         /// 初始化 <see cref="BufferPool"/> 的新实例。
         /// </summary>
+        /// <param name="minArrayLength">池中允许的最小数组长度</param>
         /// <param name="maxArrayLength">池中允许的最大数组长度。</param>
         /// <param name="maxArraysPerBucket">每个桶允许的最大数组数量。</param>
-        public BufferPool(int maxArrayLength, int maxArraysPerBucket)
+        public BufferPool(int minArrayLength, int maxArrayLength, int maxArraysPerBucket)
+            : this(minArrayLength, maxArrayLength, maxArraysPerBucket, ArrayPool<byte>.Create(maxArrayLength, maxArraysPerBucket))
         {
+        }
+
+        private BufferPool(int minArrayLength, int maxArrayLength, int maxArraysPerBucket, ArrayPool<byte> pool)
+        {
+            this.MinArrayLength = minArrayLength;
             this.MaxArrayLength = maxArrayLength;
             this.MaxArraysPerBucket = maxArraysPerBucket;
-            this._pool = ArrayPool<byte>.Create(maxArrayLength, maxArraysPerBucket);
+            this._pool = pool;
         }
 
         /// <summary>
         /// 从池中租用一个至少指定长度的字节数组。
         /// </summary>
-        /// <param name="minimumLength">所需的最小数组长度。</param>
+        /// <param name="sizeHint">期望的最小长度。</param>
         /// <returns>租用的字节数组。</returns>
-        public byte[] Rent(int minimumLength)
+        public byte[] Rent(int sizeHint)
         {
+            var minimumLength = sizeHint > 0
+                ? sizeHint
+                : Random.Shared.Next(this.MinArrayLength, this.MaxArrayLength);
+
             return this._pool.Rent(minimumLength);
         }
 

@@ -8,7 +8,7 @@ namespace RecyclableBuffer.Benchmarks
     public class StreamBenchmark
     {
         private User[] users = [];
-        private static readonly BufferPool pool = BufferPool.Default;
+        private static readonly BufferPool pool = BufferPool.Shared;
         private static readonly RecyclableMemoryStreamManager manager = new();
 
         [Params(10, 100, 1000)]

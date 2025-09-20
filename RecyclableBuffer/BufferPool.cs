@@ -32,7 +32,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取一个共享的 <see cref="BufferPool"/> 实例，适用于大多数通用场景。
         /// </summary>
-        public static BufferPool Shared { get; } = new BufferPool(8 * 1024, 1 * 1024 * 1024, null, ArrayPool<byte>.Shared);
+        public static BufferPool Shared { get; } = new BufferPool(8 * 1024, 2 * 1024 * 1024, Environment.ProcessorCount, ArrayPool<byte>.Shared);
 
         /// <summary>
         /// 获取一个默认配置的 <see cref="BufferPool"/> 实例，适用于高并发场景。
@@ -104,6 +104,16 @@ namespace RecyclableBuffer
                 SmallSize = smallBufferSize,
                 LargeSize = largeBufferSize
             };
+        }
+
+
+        /// <summary>
+        /// 获取一个 <see cref="RecyclableBufferWriter"/> 实例，使用当前缓冲区池进行管理。
+        /// </summary>
+        /// <returns>新创建的 <see cref="RecyclableBufferWriter"/> 实例。</returns>
+        public RecyclableBufferWriter GetBufferWriter()
+        {
+            return new RecyclableBufferWriter(this);
         }
     }
 }

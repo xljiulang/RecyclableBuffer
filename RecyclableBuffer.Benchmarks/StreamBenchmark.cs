@@ -8,7 +8,6 @@ namespace RecyclableBuffer.Benchmarks
     public class StreamBenchmark
     {
         private User[] users = [];
-        private static readonly BufferPool pool = BufferPool.Shared;
         private static readonly RecyclableMemoryStreamManager manager = new();
 
         [Params(10, 100, 1000)]
@@ -24,7 +23,7 @@ namespace RecyclableBuffer.Benchmarks
         [Benchmark(Baseline = true)]
         public async Task RecyclableBuffer_Json()
         {
-            using var bufferWriter = new RecyclableBufferWriter(pool);
+            using var bufferWriter = new RecyclableBufferWriter();
             var stream = bufferWriter.AsStream();
             await JsonSerializer.SerializeAsync(stream, this.users);
         }

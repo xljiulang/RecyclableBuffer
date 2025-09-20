@@ -7,7 +7,6 @@ namespace RecyclableBuffer.Benchmarks
     [MemoryDiagnoser]
     public class BuffersBenchmark
     {
-        private static readonly BufferPool pool = BufferPool.Shared;
         private static readonly RecyclableMemoryStreamManager manager = new();
 
         [Params(1024, 2048, 4096)]
@@ -24,7 +23,7 @@ namespace RecyclableBuffer.Benchmarks
         [Benchmark(Baseline = true)]
         public void RecyclableBuffer_10()
         {
-            using var bufferWriter = new RecyclableBufferWriter(pool);
+            using var bufferWriter = new RecyclableBufferWriter();
             for (var i = 0; i < 10; i++)
             {
                 bufferWriter.Write(this.buffer);

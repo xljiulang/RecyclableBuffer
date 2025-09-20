@@ -34,11 +34,11 @@ namespace RecyclableBuffer
         /// 初始化 <see cref="RentedBuffer"/> 实例，并从指定的数组池租用一个最小长度的缓冲区。
         /// </summary>
         /// <param name="pool">用于租用缓冲区的数组池。</param>
-        /// <param name="minimumLength">字节数组的最小长度。</param>
-        public RentedBuffer(BufferPool pool, int minimumLength)
+        /// <param name="minimumSize">缓冲区的最小长度。</param>
+        public RentedBuffer(BufferPool pool, int minimumSize)
         {
             this._pool = pool;
-            this._buffer = pool.Rent(minimumLength);
+            this._buffer = pool.Rent(minimumSize);
         }
 
         /// <summary>

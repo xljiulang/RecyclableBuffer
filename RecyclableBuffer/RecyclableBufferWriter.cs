@@ -11,21 +11,13 @@ namespace RecyclableBuffer
     /// <summary>
     /// 提供高效的可回收缓冲区写入器，支持分段写入和自动缓冲区池管理。
     /// </summary>
+    [DebuggerDisplay("WrittenBytes = {WrittenSequence.Length}, BuffersCount = {_buffers.Count}")]
     public sealed class RecyclableBufferWriter : IBufferWriter<byte>, IDisposable
     {
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
         private readonly BufferPool _pool;
-
-        /// <summary>
-        /// 大的缓冲区大小，优先用于初始分配。
-        /// </summary>
-        private readonly int _largeBufferSize;
-
-        /// <summary>
-        /// 小的缓冲区大小，优先用于后续分配。
-        /// </summary>
-        private readonly int _smallBufferSize;
+        private readonly BufferSizes _bufferSizes;
 
         /// <summary>
         /// 当前写入器持有的所有租用缓冲区列表。
@@ -41,7 +33,7 @@ namespace RecyclableBuffer
         /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用共享缓冲区池。
         /// </summary>
         public RecyclableBufferWriter()
-            : this(BufferPool.Shared)
+            : this(BufferPool.Default)
         {
         }
 
@@ -52,11 +44,9 @@ namespace RecyclableBuffer
         public RecyclableBufferWriter(BufferPool pool)
         {
             ArgumentNullException.ThrowIfNull(pool);
-            var (smallBufferSize, largeBufferSize) = pool.GenerateBufferSizes();
 
             this._pool = pool;
-            this._largeBufferSize = largeBufferSize;
-            this._smallBufferSize = smallBufferSize;
+            this._bufferSizes = pool.SelectBufferSizes();
         }
 
         /// <summary>
@@ -92,14 +82,14 @@ namespace RecyclableBuffer
         {
             if (this._lastBuffer == null)
             {
-                var bufferSize = sizeHint <= 0 ? this._largeBufferSize : sizeHint;
+                var bufferSize = sizeHint <= 0 ? this._bufferSizes.LargeSize : sizeHint;
                 this._lastBuffer = this.AddRentedBuffer(bufferSize);
             }
 
             var memory = this._lastBuffer.GetMemory(sizeHint);
             if (memory.IsEmpty)
             {
-                var bufferSize = sizeHint <= 0 ? this._smallBufferSize : sizeHint;
+                var bufferSize = sizeHint <= 0 ? this._bufferSizes.SmallSize : sizeHint;
                 this._lastBuffer = this.AddRentedBuffer(bufferSize);
                 memory = this._lastBuffer.GetMemory(sizeHint);
 
@@ -118,14 +108,14 @@ namespace RecyclableBuffer
         {
             if (this._lastBuffer == null)
             {
-                var bufferSize = sizeHint <= 0 ? this._largeBufferSize : sizeHint;
+                var bufferSize = sizeHint <= 0 ? this._bufferSizes.LargeSize : sizeHint;
                 this._lastBuffer = this.AddRentedBuffer(bufferSize);
             }
 
             var span = this._lastBuffer.GetSpan(sizeHint);
             if (span.IsEmpty)
             {
-                var bufferSize = sizeHint <= 0 ? this._smallBufferSize : sizeHint;
+                var bufferSize = sizeHint <= 0 ? this._bufferSizes.SmallSize : sizeHint;
                 this._lastBuffer = this.AddRentedBuffer(bufferSize);
                 span = this._lastBuffer.GetSpan(sizeHint);
 

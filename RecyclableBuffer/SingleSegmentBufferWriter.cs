@@ -10,7 +10,7 @@ namespace WebApiClientCore.Internals
     /// <summary>
     /// 表示单内存段的可回收缓冲区写入器
     /// </summary>
-    [DebuggerDisplay("WrittenBytes = {WrittenSpan.Length}")]
+    [DebuggerDisplay("WrittenBytes = {_buffer.Length}, Capacity = {_buffer.Capacity}")]
     public sealed class SingleSegmentBufferWriter : IBufferWriter<byte>, IDisposable
     {
         private bool _disposed = false;

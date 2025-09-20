@@ -7,7 +7,7 @@ namespace RecyclableBuffer
     /// 表示一个用于管理和复用缓冲区缓冲区的池。
     /// 提供高效的缓冲区租用与归还机制，减少频繁分配和回收带来的性能损耗。
     /// </summary>
-    public class BufferPool
+    public partial class BufferPool
     {
         /// <summary>
         /// 用于实际租用和归还数组的 <see cref="ArrayPool{T}"/> 实例。
@@ -104,6 +104,6 @@ namespace RecyclableBuffer
                 SmallSize = smallBufferSize,
                 LargeSize = largeBufferSize
             };
-        } 
+        }
     }
 }

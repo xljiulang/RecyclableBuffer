@@ -17,7 +17,7 @@ namespace RecyclableBuffer
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
         private readonly BufferPool _pool;
-        private readonly BufferSizes _bufferSizes;
+        private readonly BufferPool.BufferSizes _bufferSizes;
 
         /// <summary>
         /// 当前写入器持有的所有租用缓冲区列表。

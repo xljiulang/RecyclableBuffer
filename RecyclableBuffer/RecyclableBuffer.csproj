@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.0-beta2</Version>
+		<Version>1.0.0-beta3</Version>
 		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Description>可复用的多内存片段缓冲区</Description>
+		<Description>基于 ArrayPool 实现的单内存片段和多内存片段可复用的缓冲区 </Description>
 		<PackageProjectUrl>https://github.com/xljiulang/RecyclableBuffer</PackageProjectUrl>
 	</PropertyGroup>
 

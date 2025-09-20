@@ -10,11 +10,11 @@ BenchmarkDotNet v0.15.3, Windows 11 (10.0.26100.6584/24H2/2024Update/HudsonValle
 ```
 | Method                         | BufferLength | Mean     | Error    | StdDev   | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
 |------------------------------- |------------- |---------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
-| **MultipleSegmentBufferWriter_10** | **1024**         | **209.4 ns** |  **3.98 ns** |  **4.26 ns** |  **1.00** |    **0.03** | **0.0293** |     **184 B** |        **1.00** |
-| RecyclableMemoryStream_10      | 1024         | 359.5 ns |  7.14 ns |  9.53 ns |  1.72 |    0.06 | 0.0443 |     280 B |        1.52 |
+| **MultipleSegmentBufferWriter_10** | **1024**         | **182.9 ns** |  **3.62 ns** |  **3.38 ns** |  **1.00** |    **0.03** | **0.0279** |     **176 B** |        **1.00** |
+| RecyclableMemoryStream_10      | 1024         | 338.9 ns |  2.51 ns |  2.35 ns |  1.85 |    0.04 | 0.0443 |     280 B |        1.59 |
 |                                |              |          |          |          |       |         |        |           |             |
-| **MultipleSegmentBufferWriter_10** | **2048**         | **398.5 ns** |  **1.75 ns** |  **1.46 ns** |  **1.00** |    **0.00** | **0.0291** |     **184 B** |        **1.00** |
-| RecyclableMemoryStream_10      | 2048         | 521.9 ns |  9.50 ns |  8.89 ns |  1.31 |    0.02 | 0.0439 |     280 B |        1.52 |
+| **MultipleSegmentBufferWriter_10** | **2048**         | **316.2 ns** |  **3.44 ns** |  **3.21 ns** |  **1.00** |    **0.01** | **0.0277** |     **176 B** |        **1.00** |
+| RecyclableMemoryStream_10      | 2048         | 510.0 ns |  9.67 ns |  9.93 ns |  1.61 |    0.03 | 0.0439 |     280 B |        1.59 |
 |                                |              |          |          |          |       |         |        |           |             |
-| **MultipleSegmentBufferWriter_10** | **4096**         | **704.8 ns** | **13.13 ns** | **11.64 ns** |  **1.00** |    **0.02** | **0.0286** |     **184 B** |        **1.00** |
-| RecyclableMemoryStream_10      | 4096         | 837.4 ns |  8.55 ns |  7.58 ns |  1.19 |    0.02 | 0.0439 |     280 B |        1.52 |
+| **MultipleSegmentBufferWriter_10** | **4096**         | **682.6 ns** | **12.74 ns** | **12.51 ns** |  **1.00** |    **0.02** | **0.0277** |     **176 B** |        **1.00** |
+| RecyclableMemoryStream_10      | 4096         | 827.0 ns |  6.80 ns |  5.68 ns |  1.21 |    0.02 | 0.0439 |     280 B |        1.59 |

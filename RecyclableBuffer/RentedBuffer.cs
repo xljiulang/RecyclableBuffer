@@ -23,7 +23,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 用于租用和归还缓冲区的数组池。
         /// </summary>
-        private readonly BufferPool _pool;
+        private readonly ArrayPool<byte> _pool;
 
         /// <summary>
         /// 获取当前缓冲区已使用的长度。
@@ -55,7 +55,7 @@ namespace RecyclableBuffer
         /// </summary>
         /// <param name="pool">用于租用缓冲区的数组池。</param>
         /// <param name="minimumSize">缓冲区的最小长度。</param>
-        public RentedBuffer(BufferPool pool, int minimumSize)
+        public RentedBuffer(ArrayPool<byte> pool, int minimumSize)
         {
             this._pool = pool;
             this._buffer = pool.Rent(minimumSize);

@@ -9,7 +9,7 @@ namespace RecyclableBuffer.Benchmarks
     {
         private static readonly RecyclableMemoryStreamManager manager = new();
 
-        [Params(1024, 2048, 4096)]
+        [Params(1024, 8 * 1024, 16 * 1024)]
         public int BufferLength = 1024;
 
         private byte[] buffer = [];

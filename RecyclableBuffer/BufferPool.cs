@@ -1,110 +1,83 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
+using System.Numerics;
 
 namespace RecyclableBuffer
 {
     /// <summary>
-    /// 表示一个用于管理和复用缓冲区缓冲区的池。
-    /// 提供高效的缓冲区租用与归还机制，减少频繁分配和回收带来的性能损耗。
+    /// 提供可回收的字节数组池实现，支持高效的缓冲区复用。
     /// </summary>
-    public partial class BufferPool
+    public sealed class BufferPool : ArrayPool<byte>
     {
         /// <summary>
-        /// 用于实际租用和归还数组的 <see cref="ArrayPool{T}"/> 实例。
+        /// 缓冲区的标准大小。
         /// </summary>
-        private readonly ArrayPool<byte> _pool;
+        private readonly int _bufferSize;
 
         /// <summary>
-        /// 获取允许使用池中的最小缓冲区的大小（字节）。
+        /// 用于存储可复用缓冲区的并发队列。
         /// </summary>
-        public int MinBufferSize { get; }
+        private readonly ConcurrentQueue<byte[]> _buffers = [];
 
         /// <summary>
-        /// 获取允许使用池中的最大缓冲区的大小（字节）。
+        /// 获取一个使用 128KB 缓冲区大小的 <see cref="BufferPool"/> 实例。
         /// </summary>
-        public int MaxBufferSize { get; }
+        public static BufferPool Size128KB { get; } = new BufferPool(128 * 1024);
 
         /// <summary>
-        /// 获取每个桶允许的最大缓冲区数量。
+        /// 初始化 <see cref="BufferPool"/> 实例，并指定缓冲区大小。
         /// </summary>
-        public int? MaxBuffersPerBucket { get; }
-
-        /// <summary>
-        /// 获取一个共享的 <see cref="BufferPool"/> 实例，适用于大多数通用场景。
-        /// </summary>
-        public static BufferPool Shared { get; } = new BufferPool(8 * 1024, 2 * 1024 * 1024, null, ArrayPool<byte>.Shared);
-
-        /// <summary>
-        /// 获取一个默认配置的 <see cref="BufferPool"/> 实例，适用于高并发场景。
-        /// <para>手动申请大于 2MB 的缓冲区时会触发分配和 GC 回收的处罚。</para>
-        /// </summary>
-        public static BufferPool Default { get; } = new BufferPool(8 * 1024, 2 * 1024 * 1024, Math.Max(64, Environment.ProcessorCount * 2));
-
-        /// <summary>
-        /// 使用指定的最小缓冲区大小、最大缓冲区大小和每个桶的最大缓冲区数量初始化 <see cref="BufferPool"/>。
-        /// </summary>
-        /// <param name="minBufferSize">允许的最小缓冲区大小（字节）。</param>
-        /// <param name="maxBufferSize">允许的最大缓冲区大小（字节）。</param>
-        /// <param name="maxBuffersPerBucket">每个桶允许的最大缓冲区数量。</param>
-        public BufferPool(int minBufferSize, int maxBufferSize, int maxBuffersPerBucket)
-            : this(minBufferSize, maxBufferSize, maxBuffersPerBucket, ArrayPool<byte>.Create(maxBufferSize, maxBuffersPerBucket))
+        /// <param name="bufferSize">缓冲区的大小。</param>
+        public BufferPool(int bufferSize)
         {
+            var index = BitOperations.Log2((uint)(bufferSize - 1) | 0xFu) - 3;
+            this._bufferSize = 16 << index;
         }
 
         /// <summary>
-        /// 使用指定的最小缓冲区大小、最大缓冲区大小、每个桶的最大缓冲区数量和底层 <see cref="ArrayPool{T}"/> 实例初始化 <see cref="BufferPool"/>。
+        /// 从池中租用一个字节数组，长度至少为 <paramref name="minimumLength"/>。
         /// </summary>
-        /// <param name="minBufferSize">允许的最小缓冲区大小（字节）。</param>
-        /// <param name="maxBufferSize">允许的最大缓冲区大小（字节）。</param>
-        /// <param name="maxBuffersPerBucket">每个桶允许的最大缓冲区数量。</param>
-        /// <param name="pool">底层用于实际租用和归还数组的 <see cref="ArrayPool{T}"/> 实例。</param>
-        public BufferPool(int minBufferSize, int maxBufferSize, int? maxBuffersPerBucket, ArrayPool<byte> pool)
+        /// <param name="minimumLength">所需的最小长度。</param>
+        /// <returns>租用的字节数组。</returns>
+        public override byte[] Rent(int minimumLength)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(minBufferSize);
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBufferSize);
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(minBufferSize, maxBufferSize);
-
-            this.MinBufferSize = minBufferSize;
-            this.MaxBufferSize = maxBufferSize;
-            this.MaxBuffersPerBucket = maxBuffersPerBucket;
-            this._pool = pool;
-        }
-
-        /// <summary>
-        /// 从缓冲区池中租用一个至少具有指定最小大小的缓冲区。
-        /// </summary>
-        /// <param name="minimumSize">所需的最小缓冲区大小（字节）。</param>
-        /// <returns>租用的缓冲区。</returns>
-        public byte[] Rent(int minimumSize)
-        {
-            return this._pool.Rent(minimumSize);
-        }
-
-        /// <summary>
-        /// 将指定的缓冲区归还到缓冲区池中以供复用。
-        /// </summary>
-        /// <param name="buffer">要归还的缓冲区。</param>
-        public void Return(byte[] buffer)
-        {
-            this._pool.Return(buffer);
-        }
-
-        /// <summary>
-        /// 选择适合当前池配置的随机小缓冲区和大缓冲区大小。
-        /// </summary>
-        /// <returns>包含小缓冲区和大缓冲区大小的 <see cref="BufferSizes"/> 结构体。</returns>
-        public virtual BufferSizes SelectBufferSizes()
-        {
-            // 7:3切分点
-            var criticalSize = (this.MinBufferSize + this.MaxBufferSize) * 7 / 20;
-            // 使用随机缓冲区大小，是为了降低多个RecyclableBufferWriter实例的缓冲区大小过于集中在某个固定值导致爆桶的几率
-            var smallBufferSize = Random.Shared.Next(this.MinBufferSize, criticalSize);
-            var largeBufferSize = Random.Shared.Next(criticalSize, this.MaxBufferSize);
-            return new BufferSizes
+            if (minimumLength > this._bufferSize)
             {
-                SmallSize = smallBufferSize,
-                LargeSize = largeBufferSize
-            };
+                return Shared.Rent(minimumLength);
+            }
+
+            if (this._buffers.TryDequeue(out var array))
+            {
+                return array;
+            }
+
+            return new byte[this._bufferSize];
+        }
+
+        /// <summary>
+        /// 将字节数组归还到池中，可选择清空内容。
+        /// </summary>
+        /// <param name="array">要归还的字节数组。</param>
+        /// <param name="clearArray">是否清空数组内容。</param>
+        public override void Return(byte[] array, bool clearArray = false)
+        {
+            if (array.Length < this._bufferSize)
+            {
+                return;
+            }
+
+            if (array.Length > this._bufferSize)
+            {
+                Shared.Return(array, clearArray);
+                return;
+            }
+
+            if (clearArray)
+            {
+                Array.Clear(array);
+            }
+            this._buffers.Enqueue(array);
         }
     }
 }

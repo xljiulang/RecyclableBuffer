@@ -17,7 +17,6 @@ namespace RecyclableBuffer
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
         private readonly BufferPool _pool;
-        private readonly BufferPool.BufferSizes _bufferSizes;
 
         /// <summary>
         /// 当前写入器持有的所有租用缓冲区列表。
@@ -30,10 +29,10 @@ namespace RecyclableBuffer
         public ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="BufferPool.Default"/> 缓冲区池。
-        /// </summary>
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="BufferPool.Size128KB"/> 缓冲区池。
+        /// </summary> 
         public MultipleSegmentBufferWriter()
-            : this(BufferPool.Default)
+            : this(BufferPool.Size128KB)
         {
         }
 
@@ -44,9 +43,7 @@ namespace RecyclableBuffer
         public MultipleSegmentBufferWriter(BufferPool pool)
         {
             ArgumentNullException.ThrowIfNull(pool);
-
             this._pool = pool;
-            this._bufferSizes = pool.SelectBufferSizes();
         }
 
         /// <summary>
@@ -82,15 +79,13 @@ namespace RecyclableBuffer
         {
             if (this._lastBuffer == null)
             {
-                var bufferSize = sizeHint <= 0 ? this._bufferSizes.LargeSize : sizeHint;
-                this._lastBuffer = this.AddRentedBuffer(bufferSize);
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
             }
 
             var memory = this._lastBuffer.GetMemory(sizeHint);
             if (memory.IsEmpty)
             {
-                var bufferSize = sizeHint <= 0 ? this._bufferSizes.SmallSize : sizeHint;
-                this._lastBuffer = this.AddRentedBuffer(bufferSize);
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
                 memory = this._lastBuffer.GetMemory(sizeHint);
 
                 Debug.Assert(memory.Length > 0);
@@ -108,15 +103,13 @@ namespace RecyclableBuffer
         {
             if (this._lastBuffer == null)
             {
-                var bufferSize = sizeHint <= 0 ? this._bufferSizes.LargeSize : sizeHint;
-                this._lastBuffer = this.AddRentedBuffer(bufferSize);
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
             }
 
             var span = this._lastBuffer.GetSpan(sizeHint);
             if (span.IsEmpty)
             {
-                var bufferSize = sizeHint <= 0 ? this._bufferSizes.SmallSize : sizeHint;
-                this._lastBuffer = this.AddRentedBuffer(bufferSize);
+                this._lastBuffer = this.AddRentedBuffer(sizeHint);
                 span = this._lastBuffer.GetSpan(sizeHint);
 
                 Debug.Assert(span.Length > 0);
@@ -125,17 +118,17 @@ namespace RecyclableBuffer
         }
 
 
-
         /// <summary>
         /// 新增一个 <see cref="RentedBuffer"/> 并加入缓冲区列表。
         /// </summary>
-        /// <param name="bufferSize">缓冲区大小。</param> 
+        /// <param name="sizeHint">缓冲区大小。</param> 
         /// <returns>新创建的 <see cref="RentedBuffer"/>。</returns>
-        private RentedBuffer AddRentedBuffer(int bufferSize)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private RentedBuffer AddRentedBuffer(int sizeHint)
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
 
-            var buffer = new RentedBuffer(_pool, bufferSize);
+            var buffer = new RentedBuffer(_pool, sizeHint);
             this._buffers.Add(buffer);
             return buffer;
         }

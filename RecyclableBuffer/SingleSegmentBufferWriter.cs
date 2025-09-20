@@ -15,7 +15,7 @@ namespace WebApiClientCore.Internals
     {
         private bool _disposed = false;
         private RentedBuffer _buffer;
-        private readonly BufferPool _pool;
+        private readonly ArrayPool<byte> _pool;
 
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlySpan{Byte}"/>。
@@ -33,11 +33,11 @@ namespace WebApiClientCore.Internals
         public ArraySegment<byte> WritternSegment => this._buffer.WritternSegment;
 
         /// <summary>
-        /// 使用指定的初始容量和 <see cref="BufferPool.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
+        /// 使用指定的初始容量和 <see cref="ArrayPool{Byte}.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
         /// </summary>
         /// <param name="minimumSize">缓冲区的最小容量（字节）。</param>
         public SingleSegmentBufferWriter(int minimumSize)
-            : this(BufferPool.Shared, minimumSize)
+            : this(ArrayPool<byte>.Shared, minimumSize)
         {
         }
 
@@ -46,7 +46,7 @@ namespace WebApiClientCore.Internals
         /// </summary>
         /// <param name="pool">用于租用缓冲区的池。</param>
         /// <param name="minimumSize">缓冲区的最小容量（字节）。</param>
-        public SingleSegmentBufferWriter(BufferPool pool, int minimumSize)
+        public SingleSegmentBufferWriter(ArrayPool<byte> pool, int minimumSize)
         {
             this._pool = pool;
             this._buffer = new RentedBuffer(pool, minimumSize);

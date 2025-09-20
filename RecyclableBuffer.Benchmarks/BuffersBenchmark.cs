@@ -21,9 +21,9 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark(Baseline = true)]
-        public void RecyclableBuffer_10()
+        public void MultipleSegmentBufferWriter_10()
         {
-            using var bufferWriter = new RecyclableBufferWriter();
+            using var bufferWriter = new MultipleSegmentBufferWriter();
             for (var i = 0; i < 10; i++)
             {
                 bufferWriter.Write(this.buffer);

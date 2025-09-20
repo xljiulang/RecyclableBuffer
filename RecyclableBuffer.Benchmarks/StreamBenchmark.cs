@@ -21,9 +21,9 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark(Baseline = true)]
-        public async Task RecyclableBuffer_Json()
+        public async Task MultipleSegmentBufferWriter_10_Json()
         {
-            using var bufferWriter = new RecyclableBufferWriter();
+            using var bufferWriter = new MultipleSegmentBufferWriter();
             var stream = bufferWriter.AsStream();
             await JsonSerializer.SerializeAsync(stream, this.users);
         }

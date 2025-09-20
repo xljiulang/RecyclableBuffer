@@ -7,7 +7,7 @@ namespace RecyclableBuffer
     /// <summary>
     /// 表示一个从 <see cref="ArrayPool{T}"/> 租用的可回收缓冲区。
     /// </summary>
-    [DebuggerDisplay("Length = {_length}, Capacity = {_buffer.Length}")]
+    [DebuggerDisplay("Length = {Length}, Capacity = {Capacity}")]
     sealed class RentedBuffer : IDisposable
     {
         /// <summary>
@@ -26,9 +26,24 @@ namespace RecyclableBuffer
         private readonly BufferPool _pool;
 
         /// <summary>
+        /// 获取当前缓冲区已使用的长度。
+        /// </summary>
+        public int Length => this._length;
+
+        /// <summary>
+        /// 获取缓冲区的总容量。
+        /// </summary>
+        public int Capacity => this._buffer.Length;
+
+        /// <summary>
+        /// 获取当前已使用部分的 <see cref="Span{Byte}"/>。
+        /// </summary>
+        public Span<byte> WritternSpan => this._buffer.AsSpan(0, this._length);
+
+        /// <summary>
         /// 获取当前已使用部分的 <see cref="Memory{Byte}"/>。
         /// </summary>
-        public Memory<byte> Memory => this._buffer.AsMemory(0, this._length);
+        public Memory<byte> WritternMemory => this._buffer.AsMemory(0, this._length);
 
         /// <summary>
         /// 初始化 <see cref="RentedBuffer"/> 实例，并从指定的数组池租用一个最小长度的缓冲区。
@@ -109,6 +124,7 @@ namespace RecyclableBuffer
         /// </summary>
         public void Dispose()
         {
+            this._length = 0;
             this._pool.Return(this._buffer);
         }
     }

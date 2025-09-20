@@ -2,25 +2,25 @@ using System.Buffers;
 
 namespace RecyclableBuffer.Tests
 {
-    public class RecyclableBufferWriterTests
+    public class MultipleSegmentBufferWriterTests
     {
         [Fact]
         public void Constructor_Default_UsesSharedPool()
         {
-            using var writer = new RecyclableBufferWriter();
+            using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
             Assert.NotNull(writer);
         }
 
         [Fact]
         public void Constructor_WithPool_ThrowsOnNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new RecyclableBufferWriter(null!));
+            Assert.Throws<ArgumentNullException>(() => new RecyclableBuffer.MultipleSegmentBufferWriter(null!));
         }
 
         [Fact]
         public void GetMemory_ReturnsWritableMemory()
         {
-            using var writer = new RecyclableBufferWriter();
+            using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
             var memory = writer.GetMemory(16);
             Assert.True(memory.Length >= 16);
         }
@@ -28,7 +28,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void GetSpan_ReturnsWritableSpan()
         {
-            using var writer = new RecyclableBufferWriter();
+            using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
             var span = writer.GetSpan(32);
             Assert.True(span.Length >= 32);
         }
@@ -36,7 +36,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Advance_UpdatesWrittenBuffer()
         {
-            using var writer = new RecyclableBufferWriter();
+            using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
             var span = writer.GetSpan(8);
             span[0] = 42;
             writer.Advance(1);
@@ -49,14 +49,14 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void WrittenBuffer_EmptyWhenNoData()
         {
-            using var writer = new RecyclableBufferWriter();
+            using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
             Assert.Equal(0, writer.WrittenSequence.Length);
         }
 
         [Fact]
         public void AsStream_WritesData_VerifyWithWrittenBuffer()
         {
-            using var writer = new RecyclableBufferWriter();
+            using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
             using var stream = writer.AsStream();
 
             var data = new byte[] { 1, 2, 3, 4 };
@@ -70,7 +70,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Dispose_ReleasesBuffers()
         {
-            using var writer = new RecyclableBufferWriter();
+            using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
             writer.GetSpan(8);
             writer.Dispose();
 

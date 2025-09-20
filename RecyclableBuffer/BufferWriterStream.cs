@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace RecyclableBuffer
 {
-    sealed class RecyclableBufferWriterStream : Stream
+    sealed class BufferWriterStream : Stream
     {
-        private readonly RecyclableBufferWriter _bufferWriter;
+        private readonly IBufferWriter<byte> _bufferWriter;
 
-        public RecyclableBufferWriterStream(RecyclableBufferWriter _bufferWriter)
+        public BufferWriterStream(IBufferWriter<byte> _bufferWriter)
         {
             this._bufferWriter = _bufferWriter;
         }
@@ -21,7 +21,7 @@ namespace RecyclableBuffer
 
         public override bool CanWrite => true;
 
-        public override long Length => this._bufferWriter.WrittenSequence.Length;
+        public override long Length => throw new NotSupportedException();
 
         public override long Position
         {

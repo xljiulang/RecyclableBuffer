@@ -9,10 +9,10 @@ using System.Runtime.InteropServices;
 namespace RecyclableBuffer
 {
     /// <summary>
-    /// 提供高效的可回收缓冲区写入器，支持分段写入和自动缓冲区池管理。
+    /// 表示多内存段的可回收缓冲区写入器
     /// </summary>
     [DebuggerDisplay("WrittenBytes = {WrittenSequence.Length}, BuffersCount = {_buffers.Count}")]
-    public sealed class RecyclableBufferWriter : IBufferWriter<byte>, IDisposable
+    public sealed class MultipleSegmentBufferWriter : IBufferWriter<byte>, IDisposable
     {
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
@@ -30,18 +30,18 @@ namespace RecyclableBuffer
         public ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
 
         /// <summary>
-        /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用 <see cref="BufferPool.Default"/> 缓冲区池。
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="BufferPool.Default"/> 缓冲区池。
         /// </summary>
-        public RecyclableBufferWriter()
+        public MultipleSegmentBufferWriter()
             : this(BufferPool.Default)
         {
         }
 
         /// <summary>
-        /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用指定的缓冲区池。
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的缓冲区池。
         /// </summary>
         /// <param name="pool">用于租用缓冲区的 <see cref="BufferPool"/> 实例。</param>
-        public RecyclableBufferWriter(BufferPool pool)
+        public MultipleSegmentBufferWriter(BufferPool pool)
         {
             ArgumentNullException.ThrowIfNull(pool);
 
@@ -147,7 +147,7 @@ namespace RecyclableBuffer
         public Stream AsStream()
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
-            return new RecyclableBufferWriterStream(this);
+            return new BufferWriterStream(this);
         }
 
         /// <summary>

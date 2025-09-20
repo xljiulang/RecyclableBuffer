@@ -13,7 +13,7 @@ namespace RecyclableBuffer
         /// <param name="buffer">用于分段的数据缓冲区。</param>
         public RentedSegment(RentedBuffer buffer)
         {
-            this.Memory = buffer.Memory;
+            this.Memory = buffer.WritternMemory;
         }
 
         /// <summary>

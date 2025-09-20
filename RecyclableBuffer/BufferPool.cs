@@ -104,16 +104,6 @@ namespace RecyclableBuffer
                 SmallSize = smallBufferSize,
                 LargeSize = largeBufferSize
             };
-        }
-
-
-        /// <summary>
-        /// 获取一个 <see cref="RecyclableBufferWriter"/> 实例，使用当前缓冲区池进行管理。
-        /// </summary>
-        /// <returns>新创建的 <see cref="RecyclableBufferWriter"/> 实例。</returns>
-        public RecyclableBufferWriter GetBufferWriter()
-        {
-            return new RecyclableBufferWriter(this);
-        }
+        } 
     }
 }

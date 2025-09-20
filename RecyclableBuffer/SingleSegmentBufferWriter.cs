@@ -28,6 +28,11 @@ namespace WebApiClientCore.Internals
         public ReadOnlyMemory<byte> WrittenMemory => this._buffer.WritternMemory;
 
         /// <summary>
+        /// 获取已写入的字节数据的 <see cref="ArraySegment{Byte}"/>。
+        /// </summary>
+        public ArraySegment<byte> WritternSegment => this._buffer.WritternSegment;
+
+        /// <summary>
         /// 使用指定的初始容量和 <see cref="BufferPool.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
         /// </summary>
         /// <param name="minimumSize">缓冲区的最小容量（字节）。</param>
@@ -113,7 +118,7 @@ namespace WebApiClientCore.Internals
             var source = this._buffer.WritternSpan;
             if (source.Length > 0)
             {
-                source.CopyTo(nextBuffer.GetSpan());
+                source.CopyTo(nextBuffer.GetSpan(0));
                 nextBuffer.Advance(source.Length);
             }
 

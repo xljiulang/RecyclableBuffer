@@ -141,13 +141,31 @@ namespace WebApiClientCore.Internals
         /// </summary>
         public void Dispose()
         {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 析构函数（终结器）
+        /// </summary>
+        ~SingleSegmentBufferWriter()
+        {
+            this.Dispose(false);
+        }
+
+        private void Dispose(bool disposing)
+        {
             if (this._disposed)
             {
                 return;
             }
 
+            if (disposing)
+            {
+                this._buffer.Dispose();
+            }
+
             this._disposed = true;
-            this._buffer.Dispose();
         }
     }
 }

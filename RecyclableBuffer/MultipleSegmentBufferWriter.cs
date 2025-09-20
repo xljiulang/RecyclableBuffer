@@ -177,19 +177,37 @@ namespace RecyclableBuffer
         /// </summary>
         public void Dispose()
         {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 析构函数（终结器）
+        /// </summary>
+        ~MultipleSegmentBufferWriter()
+        {
+            this.Dispose(false);
+        }
+
+        private void Dispose(bool disposing)
+        {
             if (this._disposed)
             {
                 return;
             }
 
-            this._disposed = true;
-            foreach (var buffer in this._buffers)
+            if (disposing)
             {
-                buffer.Dispose();
+                foreach (var buffer in this._buffers)
+                {
+                    buffer.Dispose();
+                }
+
+                this._buffers.Clear();
+                this._lastBuffer = null;
             }
 
-            this._lastBuffer = null;
-            this._buffers.Clear();
+            this._disposed = true;
         }
     }
 }

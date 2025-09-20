@@ -44,7 +44,7 @@ namespace WebApiClientCore.Internals
         public SingleSegmentBufferWriter(BufferPool pool, int minimumSize)
         {
             this._pool = pool;
-            this._buffer = new RentedBuffer(this._pool, minimumSize);
+            this._buffer = new RentedBuffer(pool, minimumSize);
         }
 
         /// <summary>

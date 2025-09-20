@@ -32,12 +32,13 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取一个共享的 <see cref="BufferPool"/> 实例，适用于大多数通用场景。
         /// </summary>
-        public static BufferPool Shared { get; } = new BufferPool(8 * 1024, 2 * 1024 * 1024, Environment.ProcessorCount, ArrayPool<byte>.Shared);
+        public static BufferPool Shared { get; } = new BufferPool(8 * 1024, 2 * 1024 * 1024, null, ArrayPool<byte>.Shared);
 
         /// <summary>
         /// 获取一个默认配置的 <see cref="BufferPool"/> 实例，适用于高并发场景。
+        /// <para>手动申请大于 2MB 的缓冲区时会触发分配和 GC 回收的处罚。</para>
         /// </summary>
-        public static BufferPool Default { get; } = new BufferPool(8 * 1024, 2 * 1024 * 1024, 64);
+        public static BufferPool Default { get; } = new BufferPool(8 * 1024, 2 * 1024 * 1024, Math.Max(64, Environment.ProcessorCount * 2));
 
         /// <summary>
         /// 使用指定的最小缓冲区大小、最大缓冲区大小和每个桶的最大缓冲区数量初始化 <see cref="BufferPool"/>。

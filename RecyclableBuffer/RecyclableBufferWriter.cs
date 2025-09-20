@@ -30,7 +30,7 @@ namespace RecyclableBuffer
         public ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
 
         /// <summary>
-        /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用共享缓冲区池。
+        /// 初始化 <see cref="RecyclableBufferWriter"/> 实例，使用 <see cref="BufferPool.Default"/> 缓冲区池。
         /// </summary>
         public RecyclableBufferWriter()
             : this(BufferPool.Default)

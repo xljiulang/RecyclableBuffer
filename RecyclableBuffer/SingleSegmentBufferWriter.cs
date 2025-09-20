@@ -105,8 +105,10 @@ namespace WebApiClientCore.Internals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ResizeBuffer(int sizeHint)
         {
-            var capacity = sizeHint + this._buffer.Capacity + 1;
-            var nextBuffer = new RentedBuffer(this._pool, capacity);
+            ArgumentOutOfRangeException.ThrowIfNegative(sizeHint);
+
+            var minimumSize = sizeHint + this._buffer.Capacity + 1;
+            var nextBuffer = new RentedBuffer(this._pool, minimumSize);
 
             var source = this._buffer.WritternSpan;
             if (source.Length > 0)

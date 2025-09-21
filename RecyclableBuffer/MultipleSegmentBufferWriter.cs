@@ -12,7 +12,7 @@ namespace RecyclableBuffer
     /// 表示多内存段的可回收缓冲区写入器
     /// </summary>
     [DebuggerDisplay("WrittenBytes = {WrittenSequence.Length}, BuffersCount = {_buffers.Count}")]
-    public sealed class MultipleSegmentBufferWriter : IBufferWriter<byte>, IDisposable
+    public sealed class MultipleSegmentBufferWriter : SegmentBufferWriter
     {
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
@@ -50,9 +50,8 @@ namespace RecyclableBuffer
         /// 通知写入器已写入指定数量的字节。
         /// </summary>
         /// <param name="count">已写入的字节数。</param>
-        /// <exception cref="InvalidOperationException">如果没有可用缓冲区则抛出异常。</exception>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Advance(int count)
+        /// <exception cref="InvalidOperationException">如果没有可用缓冲区则抛出异常。</exception>      
+        public override void Advance(int count)
         {
             if (this._lastBuffer == null)
             {
@@ -73,9 +72,8 @@ namespace RecyclableBuffer
         /// 获取用于写入的 <see cref="Memory{Byte}"/>，可指定期望的最小长度。
         /// </summary>
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
-        /// <returns>可写入的 <see cref="Memory{Byte}"/>。</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Memory<byte> GetMemory(int sizeHint = 0)
+        /// <returns>可写入的 <see cref="Memory{Byte}"/>。</returns>      
+        public override Memory<byte> GetMemory(int sizeHint = 0)
         {
             if (this._lastBuffer == null)
             {
@@ -98,8 +96,7 @@ namespace RecyclableBuffer
         /// </summary>
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
         /// <returns>可写入的 <see cref="Span{Byte}"/>。</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Span<byte> GetSpan(int sizeHint = 0)
+        public override Span<byte> GetSpan(int sizeHint = 0)
         {
             if (this._lastBuffer == null)
             {
@@ -137,7 +134,7 @@ namespace RecyclableBuffer
         /// 转换成只写的 <see cref="Stream"/>。
         /// </summary>
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public Stream AsWritableStream()
+        public override Stream AsWritableStream()
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
             return new WritableStream(this);
@@ -147,7 +144,7 @@ namespace RecyclableBuffer
         /// 转换成只读的 <see cref="Stream"/>。
         /// </summary>
         /// <returns></returns>
-        public Stream AsReadableStream()
+        public override Stream AsReadableStream()
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
             return new ReadableStream(this.WrittenSequence);
@@ -182,24 +179,8 @@ namespace RecyclableBuffer
             return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
         }
 
-        /// <summary>
-        /// 释放所有租用的缓冲区并归还到池。
-        /// </summary>
-        public void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// 析构函数（终结器）
-        /// </summary>
-        ~MultipleSegmentBufferWriter()
-        {
-            this.Dispose(false);
-        }
-
-        private void Dispose(bool disposing)
+        /// <inheritdoc/>        
+        protected override void Dispose(bool disposing)
         {
             if (this._disposed)
             {

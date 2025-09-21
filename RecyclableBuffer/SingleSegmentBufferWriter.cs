@@ -11,7 +11,7 @@ namespace WebApiClientCore.Internals
     /// 表示单内存段的可回收缓冲区写入器
     /// </summary>
     [DebuggerDisplay("WrittenBytes = {_buffer.Length}, Capacity = {_buffer.Capacity}")]
-    public sealed class SingleSegmentBufferWriter : IBufferWriter<byte>, IDisposable
+    public sealed class SingleSegmentBufferWriter : SegmentBufferWriter
     {
         private bool _disposed = false;
         private RentedBuffer _buffer;
@@ -57,7 +57,7 @@ namespace WebApiClientCore.Internals
         /// </summary>
         /// <param name="count">已写入的字节数。</param>
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
-        public void Advance(int count)
+        public override void Advance(int count)
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
             this._buffer.Advance(count);
@@ -70,7 +70,7 @@ namespace WebApiClientCore.Internals
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
         /// <returns>满足长度要求的 <see cref="Memory{Byte}"/>。</returns>
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
-        public Memory<byte> GetMemory(int sizeHint = 0)
+        public override Memory<byte> GetMemory(int sizeHint = 0)
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
 
@@ -90,7 +90,7 @@ namespace WebApiClientCore.Internals
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
         /// <returns>满足长度要求的 <see cref="Span{Byte}"/>。</returns>
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
-        public Span<byte> GetSpan(int sizeHint = 0)
+        public override Span<byte> GetSpan(int sizeHint = 0)
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
 
@@ -130,7 +130,7 @@ namespace WebApiClientCore.Internals
         /// 转换成只写的 <see cref="Stream"/>。
         /// </summary>
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public Stream AsWritableStream()
+        public override Stream AsWritableStream()
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
             return new WritableStream(this);
@@ -140,30 +140,14 @@ namespace WebApiClientCore.Internals
         /// 转换成只读的 <see cref="Stream"/>。
         /// </summary>
         /// <returns></returns>
-        public Stream AsReadableStream()
+        public override Stream AsReadableStream()
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
             return new ReadableStream(this.WrittenMemory);
         }
 
-        /// <summary>
-        /// 释放所有租用的缓冲区并归还到池。
-        /// </summary>
-        public void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// 析构函数（终结器）
-        /// </summary>
-        ~SingleSegmentBufferWriter()
-        {
-            this.Dispose(false);
-        }
-
-        private void Dispose(bool disposing)
+        /// <inheritdoc/>        
+        protected override void Dispose(bool disposing)
         {
             if (this._disposed)
             {

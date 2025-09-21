@@ -10,7 +10,7 @@ namespace RecyclableBuffer
     /// <summary>
     /// 提供可回收的字节数组池实现，支持高效的缓冲区复用。
     /// </summary>
-    [DebuggerDisplay("ArrayLength = {_arrayLength}, ArrayCount = {_arrayCount}")]
+    [DebuggerDisplay("ArrayLength = {_arrayLength}")]
     public class ByteArrayPool : ArrayPool<byte>
     {
         private int _arrayCount;
@@ -62,7 +62,10 @@ namespace RecyclableBuffer
 
             if (this._arrayBucket.TryDequeue(out var array))
             {
-                Interlocked.Decrement(ref this._arrayCount);
+                if (this._maxArrayCount != null)
+                {
+                    Interlocked.Decrement(ref this._arrayCount);
+                }
                 return array;
             }
 
@@ -87,19 +90,17 @@ namespace RecyclableBuffer
                 return;
             }
 
+            if (this._maxArrayCount != null && Interlocked.Increment(ref this._arrayCount) > this._maxArrayCount.Value)
+            {
+                Interlocked.Decrement(ref this._arrayCount);
+                return;
+            }
+
             if (clearArray)
             {
                 Array.Clear(array);
             }
-
-            if (Interlocked.Increment(ref this._arrayCount) > this._maxArrayCount)
-            {
-                Interlocked.Decrement(ref this._arrayCount);
-            }
-            else
-            {
-                this._arrayBucket.Enqueue(array);
-            }
+            this._arrayBucket.Enqueue(array);
         }
     }
 }

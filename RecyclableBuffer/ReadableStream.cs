@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RecyclableBuffer
 {
@@ -50,6 +52,35 @@ namespace RecyclableBuffer
             this._sequence.Slice(this._position, bytesToRead).CopyTo(buffer);
             this._position += bytesToRead;
             return bytesToRead;
+        }
+         
+        public override void CopyTo(Stream destination, int bufferSize)
+        {
+            var sequence = this._sequence;
+            if (this._position > 0L)
+            {
+                sequence = sequence.Slice(this._position);
+            }
+
+            foreach (var segment in sequence)
+            {
+                destination.Write(segment.Span);
+            }
+        }
+
+
+        public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+        {
+            var sequence = this._sequence;
+            if (this._position > 0L)
+            {
+                sequence = sequence.Slice(this._position);
+            }
+
+            foreach (var segment in sequence)
+            {
+                await destination.WriteAsync(segment, cancellationToken);
+            }
         }
 
 

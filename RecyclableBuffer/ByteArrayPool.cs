@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Threading;
@@ -9,43 +8,35 @@ namespace RecyclableBuffer
 {
     /// <summary>
     /// 提供可回收的字节数组池实现，支持高效的缓冲区复用。
+    /// <para>维护一个固定缓冲区大小且可扩容的桶，承载所有小于等于此缓冲区大小的 Rent 和 Return 操作</para>
+    /// <para>由 Shared 实例承载大于此缓冲区大小的 Rent 和 Return 操作</para>
     /// </summary>
-    [DebuggerDisplay("ArrayLength = {_arrayLength}")]
-    public class ByteArrayPool : ArrayPool<byte>
+    [DebuggerDisplay("Capacity = {_arrayBucket.Capacity}")]
+    public sealed class ByteArrayPool : ArrayPool<byte>
     {
-        private int _arrayCount;
-
         /// <summary>
         /// 每个缓冲区的字节大小。
         /// </summary>
         private readonly int _arrayLength;
 
         /// <summary>
-        /// 池中最大缓冲区数量的可选限制。
-        /// </summary>
-        private readonly int? _maxArrayCount;
-
-        /// <summary>
         /// 用于存储可复用缓冲区的并发队列。
         /// </summary>
-        private readonly ConcurrentQueue<byte[]> _arrayBucket = [];
-
+        private readonly ArrayBucket _arrayBucket = new();
 
         /// <summary>
         /// 获取一个使用 128KB 缓冲区大小且不限制数量的 <see cref="ByteArrayPool"/> 实例。
         /// </summary>
-        public static ByteArrayPool Default { get; } = new ByteArrayPool(128 * 1024, null);
+        public static ByteArrayPool Default { get; } = new ByteArrayPool(128 * 1024);
 
         /// <summary>
         /// 初始化 <see cref="ByteArrayPool"/> 实例，并指定缓冲区大小。
         /// </summary>
         /// <param name="arrayLength">每个缓冲区的字节大小。</param>
-        /// <param name="maxArrayCount">池中最大缓冲区数量的可选限制。</param>
-        public ByteArrayPool(int arrayLength, int? maxArrayCount)
+        public ByteArrayPool(int arrayLength)
         {
             var index = BitOperations.Log2((uint)(arrayLength - 1) | 0xFu) - 3;
             this._arrayLength = 16 << index;
-            this._maxArrayCount = maxArrayCount;
         }
 
         /// <summary>
@@ -59,17 +50,10 @@ namespace RecyclableBuffer
             {
                 return Shared.Rent(minimumLength);
             }
-
-            if (this._arrayBucket.TryDequeue(out var array))
+            else
             {
-                if (this._maxArrayCount != null)
-                {
-                    Interlocked.Decrement(ref this._arrayCount);
-                }
-                return array;
+                return this._arrayBucket.Rent() ?? new byte[this._arrayLength];
             }
-
-            return new byte[this._arrayLength];
         }
 
         /// <summary>
@@ -90,17 +74,96 @@ namespace RecyclableBuffer
                 return;
             }
 
-            if (this._maxArrayCount != null && Interlocked.Increment(ref this._arrayCount) > this._maxArrayCount.Value)
-            {
-                Interlocked.Decrement(ref this._arrayCount);
-                return;
-            }
-
             if (clearArray)
             {
                 Array.Clear(array);
             }
-            this._arrayBucket.Enqueue(array);
+            this._arrayBucket.Return(array);
+        }
+
+
+        /// <summary>
+        /// 表示用于存储和复用字节数组的桶，支持线程安全的租用和归还操作。
+        /// </summary>
+        [DebuggerDisplay("Capacity = {Capacity}")]
+        private sealed class ArrayBucket
+        {
+            /// <summary>
+            /// 当前桶中可用缓冲区的索引。
+            /// </summary>
+            private int _index = 0;
+
+            /// <summary>
+            /// 用于保护缓冲区数组的自旋锁。
+            /// </summary>
+            private SpinLock _lock = new SpinLock(Debugger.IsAttached);
+
+            /// <summary>
+            /// 存储可复用的字节数组缓冲区。
+            /// </summary>
+            private byte[]?[] _buffers = new byte[Environment.ProcessorCount][];
+
+            /// <summary>
+            /// 获取当前桶的容量（缓冲区数组长度）。
+            /// </summary>
+            public int Capacity => this._buffers.Length;
+
+            /// <summary>
+            /// 从桶中租用一个字节数组，如果桶已满则自动扩容。
+            /// </summary>
+            /// <returns>可用的字节数组，如果没有则返回 null。</returns>
+            public byte[]? Rent()
+            {
+                var lockTaken = false;
+                var array = default(byte[]);
+
+                try
+                {
+                    this._lock.Enter(ref lockTaken);
+
+                    if (this._index >= this._buffers.Length)
+                    {
+                        Array.Resize(ref this._buffers, this._buffers.Length * 2);
+                    }
+
+                    array = this._buffers[this._index];
+                    this._buffers[_index++] = null;
+                }
+                finally
+                {
+                    if (lockTaken)
+                    {
+                        this._lock.Exit(false);
+                    }
+                }
+
+                return array;
+            }
+
+            /// <summary>
+            /// 将字节数组归还到桶中，供后续复用。
+            /// </summary>
+            /// <param name="array">要归还的字节数组。</param>
+            public void Return(byte[] array)
+            {
+                bool lockTaken = false;
+                try
+                {
+                    this._lock.Enter(ref lockTaken);
+                    if (this._index != 0)
+                    {
+                        this._index--;
+                        this._buffers[this._index] = array;
+                    }
+                }
+                finally
+                {
+                    if (lockTaken)
+                    {
+                        this._lock.Exit(false);
+                    }
+                }
+            }
         }
     }
 }

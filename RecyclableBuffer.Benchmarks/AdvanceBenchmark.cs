@@ -8,7 +8,7 @@ namespace RecyclableBuffer.Benchmarks
     {
         private static readonly RecyclableMemoryStreamManager manager = new();
 
-        [Params(1024, 128 * 1024 + 1)]
+        [Params(1024, 8 * 1024, 128 * 1024 + 1)]
         public int AdvanceCount;
 
         [Benchmark(Baseline = true)]

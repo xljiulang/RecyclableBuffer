@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace RecyclableBuffer
 {
-    sealed class BufferWriterStream : Stream
+    sealed class WritableStream : Stream
     {
         private readonly IBufferWriter<byte> _bufferWriter;
 
-        public BufferWriterStream(IBufferWriter<byte> _bufferWriter)
+        public WritableStream(IBufferWriter<byte> _bufferWriter)
         {
             this._bufferWriter = _bufferWriter;
         }

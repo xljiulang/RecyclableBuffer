@@ -28,7 +28,7 @@ var sequence = bufferWriter.WrittenSpan;
 using var bufferWriter = new SingleSegmentBufferWriter(1024);
 
 // 使用Stream接口写入
-var writableStream = bufferWriter.AsStream();
+var writableStream = bufferWriter.AsWritableStream();
 await JsonSerializer.SerializeAsync(writableStream, users);
 
 // 获取已写入的数据跨度
@@ -57,7 +57,7 @@ var sequence = bufferWriter.WrittenSequence;
 using var bufferWriter = new MultipleSegmentBufferWriter();
 
 // 使用Stream接口写入
-var writableStream = bufferWriter.AsStream();
+var writableStream = bufferWriter.AsWritableStream();
 await JsonSerializer.SerializeAsync(writableStream, users);
 
 // 获取已写入的数据序列

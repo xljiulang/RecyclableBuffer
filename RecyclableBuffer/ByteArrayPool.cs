@@ -27,7 +27,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取一个使用 128KB 缓冲区大小且不限制数量的 <see cref="ByteArrayPool"/> 实例。
         /// </summary>
-        public static ByteArrayPool Default { get; } = new ByteArrayPool(128 * 1024);
+        public static ByteArrayPool Default { get; } = new ByteArrayPool(8 );
 
         /// <summary>
         /// 初始化 <see cref="ByteArrayPool"/> 实例，并指定缓冲区大小。

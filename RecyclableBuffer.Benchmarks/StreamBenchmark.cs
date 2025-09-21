@@ -24,7 +24,7 @@ namespace RecyclableBuffer.Benchmarks
         public async Task MultipleSegmentBufferWriter_10_Json()
         {
             using var bufferWriter = new MultipleSegmentBufferWriter();
-            var stream = bufferWriter.AsStream();
+            var stream = bufferWriter.AsWritableStream();
             await JsonSerializer.SerializeAsync(stream, this.users);
         }
 

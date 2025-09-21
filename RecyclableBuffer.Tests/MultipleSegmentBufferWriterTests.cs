@@ -57,7 +57,7 @@ namespace RecyclableBuffer.Tests
         public void AsStream_WritesData_VerifyWithWrittenBuffer()
         {
             using var writer = new RecyclableBuffer.MultipleSegmentBufferWriter();
-            using var stream = writer.AsStream();
+            using var stream = writer.AsWritableStream();
 
             var data = new byte[] { 1, 2, 3, 4 };
             stream.Write(data, 0, data.Length);

@@ -127,13 +127,23 @@ namespace WebApiClientCore.Internals
         }
 
         /// <summary>
-        /// 将缓冲区内容包装为 <see cref="Stream"/>，可选是否拥有缓冲区写入器的所有权。
+        /// 转换成只写的 <see cref="Stream"/>。
         /// </summary>
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public Stream AsStream()
+        public Stream AsWritableStream()
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
-            return new BufferWriterStream(this);
+            return new WritableStream(this);
+        }
+
+        /// <summary>
+        /// 转换成只读的 <see cref="Stream"/>。
+        /// </summary>
+        /// <returns></returns>
+        public Stream AsReadableStream()
+        {
+            ObjectDisposedException.ThrowIf(this._disposed, this);
+            return new ReadableStream(this.WrittenMemory);
         }
 
         /// <summary>

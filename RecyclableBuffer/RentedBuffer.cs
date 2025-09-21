@@ -46,11 +46,6 @@ namespace RecyclableBuffer
         public Memory<byte> WritternMemory => this._buffer.AsMemory(0, this._length);
 
         /// <summary>
-        /// 获取当前已使用部分的 <see cref="ArraySegment{Byte}"/>。
-        /// </summary>
-        public ArraySegment<byte> WritternSegment => new(this._buffer, 0, this._length);
-
-        /// <summary>
         /// 初始化 <see cref="RentedBuffer"/> 实例，并从指定的数组池租用一个最小长度的缓冲区。
         /// </summary>
         /// <param name="pool">用于租用缓冲区的数组池。</param>

@@ -10,6 +10,11 @@ namespace RecyclableBuffer
     public abstract class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
     {
         /// <summary>
+        /// 获取已写入的所有缓冲区组成的只读字节序列。
+        /// </summary>
+        public abstract ReadOnlySequence<byte> WrittenSequence { get; }
+
+        /// <summary>
         /// 通知写入器已向缓冲区写入指定数量的字节。
         /// </summary>
         /// <param name="count">已写入的字节数。</param>
@@ -33,13 +38,19 @@ namespace RecyclableBuffer
         /// 转换成只写的 <see cref="Stream"/>。
         /// </summary>
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public abstract Stream AsWritableStream();
-         
+        public Stream AsWritableStream()
+        {
+            return new WritableStream(this);
+        }
+
         /// <summary>
         /// 转换成只读的 <see cref="Stream"/>。
         /// </summary>
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public abstract Stream AsReadableStream();
+        public Stream AsReadableStream()
+        {
+            return new ReadableStream(this.WrittenSequence);
+        }
 
         /// <summary>
         /// 释放所有租用的缓冲区并归还到池。

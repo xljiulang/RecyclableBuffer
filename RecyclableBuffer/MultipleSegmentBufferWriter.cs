@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -26,7 +25,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取已写入的所有缓冲区组成的只读字节序列。
         /// </summary>
-        public ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
+        public override ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
 
         /// <summary>
         /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="ByteArrayPool.Default"/> 缓冲区池。
@@ -128,26 +127,6 @@ namespace RecyclableBuffer
             var buffer = new RentedBuffer(_pool, sizeHint);
             this._buffers.Add(buffer);
             return buffer;
-        }
-
-        /// <summary>
-        /// 转换成只写的 <see cref="Stream"/>。
-        /// </summary>
-        /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public override Stream AsWritableStream()
-        {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
-            return new WritableStream(this);
-        }
-
-        /// <summary>
-        /// 转换成只读的 <see cref="Stream"/>。
-        /// </summary>
-        /// <returns></returns>
-        public override Stream AsReadableStream()
-        {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
-            return new ReadableStream(this.WrittenSequence);
         }
 
         /// <summary>

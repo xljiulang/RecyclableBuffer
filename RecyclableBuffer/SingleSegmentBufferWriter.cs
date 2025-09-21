@@ -2,7 +2,6 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace WebApiClientCore.Internals
@@ -28,9 +27,9 @@ namespace WebApiClientCore.Internals
         public ReadOnlyMemory<byte> WrittenMemory => this._buffer.WritternMemory;
 
         /// <summary>
-        /// 获取已写入的字节数据的 <see cref="ArraySegment{Byte}"/>。
+        /// 获取已写入的所有缓冲区组成的只读字节序列。
         /// </summary>
-        public ArraySegment<byte> WritternSegment => this._buffer.WritternSegment;
+        public override ReadOnlySequence<byte> WrittenSequence => new(this.WrittenMemory);
 
         /// <summary>
         /// 使用指定的初始容量和 <see cref="ArrayPool{Byte}.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
@@ -124,27 +123,7 @@ namespace WebApiClientCore.Internals
 
             this._buffer.Dispose();
             this._buffer = nextBuffer;
-        }
-
-        /// <summary>
-        /// 转换成只写的 <see cref="Stream"/>。
-        /// </summary>
-        /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public override Stream AsWritableStream()
-        {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
-            return new WritableStream(this);
-        }
-
-        /// <summary>
-        /// 转换成只读的 <see cref="Stream"/>。
-        /// </summary>
-        /// <returns></returns>
-        public override Stream AsReadableStream()
-        {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
-            return new ReadableStream(this.WrittenMemory);
-        }
+        }      
 
         /// <inheritdoc/>        
         protected override void Dispose(bool disposing)

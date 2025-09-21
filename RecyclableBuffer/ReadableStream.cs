@@ -9,11 +9,6 @@ namespace RecyclableBuffer
         private long _position = 0L;
         private readonly ReadOnlySequence<byte> _sequence;
 
-        public ReadableStream(ReadOnlyMemory<byte> sequence)
-            : this(new ReadOnlySequence<byte>(sequence))
-        {
-        }
-
         public ReadableStream(ReadOnlySequence<byte> sequence)
         {
             this._sequence = sequence;

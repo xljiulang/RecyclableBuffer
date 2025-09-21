@@ -46,6 +46,9 @@ namespace RecyclableBuffer
         /// <returns>租用的字节数组。</returns>
         public override byte[] Rent(int minimumLength)
         {
+            // minimumLength 对应 IBufferWriter.GetMemory 和 GetSpan 传入的 sizeHint
+            // 正常情况下 sizeHint 都是 0 或者一个很小的值，只要小于 _arrayLength 直接从 _arrayBucket 租用
+            // 但不排除用户传入了大于 _arrayLength 的 sizeHint，这种意外情况直接从 Shared 池中租用
             if (minimumLength > this._arrayLength)
             {
                 return Shared.Rent(minimumLength);

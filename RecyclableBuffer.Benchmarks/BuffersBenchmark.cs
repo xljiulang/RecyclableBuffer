@@ -27,8 +27,7 @@ namespace RecyclableBuffer.Benchmarks
             for (var i = 0; i < 10; i++)
             {
                 bufferWriter.Write(this.buffer);
-            }
-            bufferWriter.Dispose();
+            } 
         }
 
         [Benchmark]

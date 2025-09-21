@@ -17,8 +17,8 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Constructor_WithPoolAndCapacity_ShouldAllocateBuffer()
         {
-            var pool = BufferPool.Shared;
-            var writer = new SingleSegmentBufferWriter(pool, 32);
+            var pool = ByteArrayPool.Shared;
+            var writer = new SingleSegmentBufferWriter(32, pool);
             Assert.True(writer.WrittenSpan.Length == 0);
             writer.Dispose();
         }

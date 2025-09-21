@@ -28,6 +28,7 @@ namespace RecyclableBuffer.Benchmarks
             {
                 bufferWriter.Write(this.buffer);
             }
+            bufferWriter.Dispose();
         }
 
         [Benchmark]

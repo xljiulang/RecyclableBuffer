@@ -12,7 +12,7 @@
 
 **`IBufferWriter<byte>` 接口**
 ```c#
-using var bufferWriter = new SingleSegmentBufferWriter();
+using var bufferWriter = new SingleSegmentBufferWriter(1024);
 
 // 使用IBufferWriter<byte>接口写入一些数据
 var span = bufferWriter.GetSpan(sizeof(int));
@@ -25,7 +25,7 @@ var sequence = bufferWriter.WrittenSpan;
  
 **Stream 接口**
 ```c#
-using var bufferWriter = new SingleSegmentBufferWriter();
+using var bufferWriter = new SingleSegmentBufferWriter(1024);
 
 // 使用Stream接口写入
 var writableStream = bufferWriter.AsStream();

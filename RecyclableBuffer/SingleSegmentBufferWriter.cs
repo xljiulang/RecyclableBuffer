@@ -35,21 +35,21 @@ namespace WebApiClientCore.Internals
         /// <summary>
         /// 使用指定的初始容量和 <see cref="ArrayPool{Byte}.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
         /// </summary>
-        /// <param name="minimumSize">缓冲区的最小容量（字节）。</param>
-        public SingleSegmentBufferWriter(int minimumSize)
-            : this(ArrayPool<byte>.Shared, minimumSize)
+        /// <param name="minimumLength">缓冲区的最小容量（字节）。</param>
+        public SingleSegmentBufferWriter(int minimumLength)
+            : this(minimumLength, ArrayPool<byte>.Shared)
         {
         }
 
         /// <summary>
         /// 使用指定的缓冲区池和初始容量初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
         /// </summary>
+        /// <param name="minimumLength">缓冲区的最小容量（字节）。</param>
         /// <param name="pool">用于租用缓冲区的池。</param>
-        /// <param name="minimumSize">缓冲区的最小容量（字节）。</param>
-        public SingleSegmentBufferWriter(ArrayPool<byte> pool, int minimumSize)
+        public SingleSegmentBufferWriter(int minimumLength, ArrayPool<byte> pool)
         {
             this._pool = pool;
-            this._buffer = new RentedBuffer(pool, minimumSize);
+            this._buffer = new RentedBuffer(pool, minimumLength);
         }
 
         /// <summary>
@@ -112,8 +112,8 @@ namespace WebApiClientCore.Internals
         {
             ArgumentOutOfRangeException.ThrowIfNegative(sizeHint);
 
-            var minimumSize = sizeHint + this._buffer.Capacity + 1;
-            var nextBuffer = new RentedBuffer(this._pool, minimumSize);
+            var minimumLength = sizeHint + this._buffer.Capacity + 1;
+            var nextBuffer = new RentedBuffer(this._pool, minimumLength);
 
             var source = this._buffer.WritternSpan;
             if (source.Length > 0)

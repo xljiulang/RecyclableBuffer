@@ -16,7 +16,7 @@ namespace RecyclableBuffer
     {
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
-        private readonly BufferPool _pool;
+        private readonly ByteArrayPool _pool;
 
         /// <summary>
         /// 当前写入器持有的所有租用缓冲区列表。
@@ -29,18 +29,18 @@ namespace RecyclableBuffer
         public ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="BufferPool.Size128KB"/> 缓冲区池。
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="ByteArrayPool.Default"/> 缓冲区池。
         /// </summary> 
         public MultipleSegmentBufferWriter()
-            : this(BufferPool.Size128KB)
+            : this(ByteArrayPool.Default)
         {
         }
 
         /// <summary>
         /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的缓冲区池。
         /// </summary>
-        /// <param name="pool">用于租用缓冲区的 <see cref="BufferPool"/> 实例。</param>
-        public MultipleSegmentBufferWriter(BufferPool pool)
+        /// <param name="pool">用于租用缓冲区的 <see cref="ByteArrayPool"/> 实例。</param>
+        public MultipleSegmentBufferWriter(ByteArrayPool pool)
         {
             ArgumentNullException.ThrowIfNull(pool);
             this._pool = pool;

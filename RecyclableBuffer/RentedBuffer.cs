@@ -63,10 +63,17 @@ namespace RecyclableBuffer
         /// <exception cref="ArgumentOutOfRangeException">如果 <paramref name="count"/> 超过剩余空间，则抛出异常。</exception>
         public void Advance(int count)
         {
-            var freeSize = this._buffer.Length - this._length;
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(count, freeSize);
+            if (count > this._buffer.Length - this._length)
+            {
+                Throw();
+            }
 
             this._length += count;
+
+            static void Throw()
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Advance count exceeds the available space in the buffer.");
+            }
         }
 
         /// <summary>

@@ -46,6 +46,8 @@ namespace RecyclableBuffer
         /// <param name="pool">用于租用缓冲区的池。</param>
         public SingleSegmentBufferWriter(int minimumLength, ArrayPool<byte> pool)
         {
+            ArgumentNullException.ThrowIfNull(pool);
+
             _pool = pool;
             _buffer = new RentedBuffer(pool, minimumLength);
         }
@@ -57,7 +59,7 @@ namespace RecyclableBuffer
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override void Advance(int count)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            ThrowIfDisposed();
             _buffer.Advance(count);
         }
 
@@ -70,7 +72,7 @@ namespace RecyclableBuffer
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override Memory<byte> GetMemory(int sizeHint = 0)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            ThrowIfDisposed();
 
             var memory = _buffer.GetMemory(sizeHint);
             if (memory.IsEmpty)
@@ -90,7 +92,7 @@ namespace RecyclableBuffer
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override Span<byte> GetSpan(int sizeHint = 0)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            ThrowIfDisposed();
 
             var span = _buffer.GetSpan(sizeHint);
             if (span.IsEmpty)
@@ -108,7 +110,10 @@ namespace RecyclableBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ResizeBuffer(int sizeHint)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(sizeHint);
+            if (sizeHint < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sizeHint));
+            }
 
             var minimumLength = sizeHint + _buffer.Capacity + 1;
             var nextBuffer = new RentedBuffer(_pool, minimumLength);
@@ -122,6 +127,21 @@ namespace RecyclableBuffer
 
             _buffer.Dispose();
             _buffer = nextBuffer;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                Throw();
+            }
+
+            static void Throw()
+            {
+                throw new ObjectDisposedException(nameof(SingleSegmentBufferWriter));
+            }
         }
 
         /// <inheritdoc/>        

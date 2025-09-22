@@ -122,7 +122,7 @@ namespace RecyclableBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private RentedBuffer AddRentedBuffer(int sizeHint)
         {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
+            this.ThrowIfDisposed();
 
             var buffer = new RentedBuffer(_pool, sizeHint);
             this._buffers.Add(buffer);
@@ -135,7 +135,7 @@ namespace RecyclableBuffer
         /// <returns>只读字节序列。</returns>
         private ReadOnlySequence<byte> GetWrittenSequence()
         {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
+            this.ThrowIfDisposed();
 
             var buffers = CollectionsMarshal.AsSpan(this._buffers);
             if (buffers.Length == 0)
@@ -156,6 +156,20 @@ namespace RecyclableBuffer
             }
 
             return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                Throw();
+            }
+
+            static void Throw()
+            {
+                throw new ObjectDisposedException(nameof(SingleSegmentBufferWriter));
+            }
         }
 
         /// <inheritdoc/>        

@@ -1,5 +1,4 @@
 using System.Buffers;
-using WebApiClientCore.Internals;
 
 namespace RecyclableBuffer.Tests
 {

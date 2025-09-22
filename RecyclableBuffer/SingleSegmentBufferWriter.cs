@@ -1,10 +1,9 @@
-﻿using RecyclableBuffer;
-using System;
+﻿using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace WebApiClientCore.Internals
+namespace RecyclableBuffer
 {
     /// <summary>
     /// 表示单内存段的可回收缓冲区写入器
@@ -19,17 +18,17 @@ namespace WebApiClientCore.Internals
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlySpan{Byte}"/>。
         /// </summary>
-        public ReadOnlySpan<byte> WrittenSpan => this._buffer.WritternSpan;
+        public ReadOnlySpan<byte> WrittenSpan => _buffer.WritternSpan;
 
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlyMemory{Byte}"/>。
         /// </summary>
-        public ReadOnlyMemory<byte> WrittenMemory => this._buffer.WritternMemory;
+        public ReadOnlyMemory<byte> WrittenMemory => _buffer.WritternMemory;
 
         /// <summary>
         /// 获取已写入的所有缓冲区组成的只读字节序列。
         /// </summary>
-        public override ReadOnlySequence<byte> WrittenSequence => new(this.WrittenMemory);
+        public override ReadOnlySequence<byte> WrittenSequence => new(WrittenMemory);
 
         /// <summary>
         /// 使用指定的初始容量和 <see cref="ArrayPool{Byte}.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
@@ -47,8 +46,8 @@ namespace WebApiClientCore.Internals
         /// <param name="pool">用于租用缓冲区的池。</param>
         public SingleSegmentBufferWriter(int minimumLength, ArrayPool<byte> pool)
         {
-            this._pool = pool;
-            this._buffer = new RentedBuffer(pool, minimumLength);
+            _pool = pool;
+            _buffer = new RentedBuffer(pool, minimumLength);
         }
 
         /// <summary>
@@ -58,8 +57,8 @@ namespace WebApiClientCore.Internals
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override void Advance(int count)
         {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
-            this._buffer.Advance(count);
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _buffer.Advance(count);
         }
 
         /// <summary>
@@ -71,13 +70,13 @@ namespace WebApiClientCore.Internals
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override Memory<byte> GetMemory(int sizeHint = 0)
         {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
-            var memory = this._buffer.GetMemory(sizeHint);
+            var memory = _buffer.GetMemory(sizeHint);
             if (memory.IsEmpty)
             {
-                this.ResizeBuffer(sizeHint);
-                memory = this._buffer.GetMemory(sizeHint);
+                ResizeBuffer(sizeHint);
+                memory = _buffer.GetMemory(sizeHint);
             }
             return memory;
         }
@@ -91,13 +90,13 @@ namespace WebApiClientCore.Internals
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override Span<byte> GetSpan(int sizeHint = 0)
         {
-            ObjectDisposedException.ThrowIf(this._disposed, this);
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
-            var span = this._buffer.GetSpan(sizeHint);
+            var span = _buffer.GetSpan(sizeHint);
             if (span.IsEmpty)
             {
-                this.ResizeBuffer(sizeHint);
-                span = this._buffer.GetSpan(sizeHint);
+                ResizeBuffer(sizeHint);
+                span = _buffer.GetSpan(sizeHint);
             }
             return span;
         }
@@ -111,34 +110,30 @@ namespace WebApiClientCore.Internals
         {
             ArgumentOutOfRangeException.ThrowIfNegative(sizeHint);
 
-            var minimumLength = sizeHint + this._buffer.Capacity + 1;
-            var nextBuffer = new RentedBuffer(this._pool, minimumLength);
+            var minimumLength = sizeHint + _buffer.Capacity + 1;
+            var nextBuffer = new RentedBuffer(_pool, minimumLength);
 
-            var source = this._buffer.WritternSpan;
+            var source = _buffer.WritternSpan;
             if (source.Length > 0)
             {
                 source.CopyTo(nextBuffer.GetSpan(0));
                 nextBuffer.Advance(source.Length);
             }
 
-            this._buffer.Dispose();
-            this._buffer = nextBuffer;
-        }      
+            _buffer.Dispose();
+            _buffer = nextBuffer;
+        }
 
         /// <inheritdoc/>        
         protected override void Dispose(bool disposing)
         {
-            if (this._disposed)
+            if (_disposed)
             {
                 return;
             }
 
-            if (disposing)
-            {
-                this._buffer.Dispose();
-            }
-
-            this._disposed = true;
+            _buffer.Dispose();
+            _disposed = true;
         }
     }
 }

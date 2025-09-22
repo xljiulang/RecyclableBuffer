@@ -166,16 +166,13 @@ namespace RecyclableBuffer
                 return;
             }
 
-            if (disposing)
+            foreach (var buffer in this._buffers)
             {
-                foreach (var buffer in this._buffers)
-                {
-                    buffer.Dispose();
-                }
-
-                this._buffers.Clear();
-                this._lastBuffer = null;
+                buffer.Dispose();
             }
+
+            this._buffers.Clear();
+            this._lastBuffer = null;
 
             this._disposed = true;
         }

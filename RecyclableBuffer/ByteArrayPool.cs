@@ -21,7 +21,8 @@ namespace RecyclableBuffer
         /// <summary>
         /// 用于存储可复用缓冲区的并发队列。
         /// </summary>
-        private readonly ByteArrayBucket _arrayBucket = new();
+        private readonly ByteArrayBucket _arrayBucket;
+
 
         /// <summary>
         /// 获取一个使用 128KB 缓冲区大小且不限制数量的 <see cref="ByteArrayPool"/> 实例。
@@ -31,11 +32,13 @@ namespace RecyclableBuffer
         /// <summary>
         /// 初始化 <see cref="ByteArrayPool"/> 实例，并指定缓冲区大小。
         /// </summary>
-        /// <param name="arrayLength">每个缓冲区的字节大小。</param>
-        public ByteArrayPool(int arrayLength)
+        /// <param name="arrayLength">每个缓冲区的字节大小。尝试租用大于此值的缓冲区时将从<see cref="ArrayPool{Byte}.Shared"/> 中获取</param>
+        /// <param name="maxArrayCount">缓冲区的最高数量限制，null 表示不限制</param>
+        public ByteArrayPool(int arrayLength, int? maxArrayCount = null)
         {
             var index = Log2((uint)(arrayLength - 1) | 0xFu) - 3;
             this._arrayLength = 16 << index;
+            this._arrayBucket = new ByteArrayBucket(maxArrayCount);
         }
 
         /// <summary>
@@ -108,6 +111,11 @@ namespace RecyclableBuffer
         private sealed class ByteArrayBucket
         {
             /// <summary>
+            /// 缓冲区的最高数量限制
+            /// </summary>
+            private readonly int _maxArrayCount;
+
+            /// <summary>
             /// 当前桶中可用缓冲区的索引。
             /// </summary>
             private int _index = 0;
@@ -120,12 +128,33 @@ namespace RecyclableBuffer
             /// <summary>
             /// 存储可复用的字节数组缓冲区。
             /// </summary>
-            private byte[]?[] _buffers = new byte[Environment.ProcessorCount][];
+            private byte[]?[] _buffers;
 
             /// <summary>
             /// 获取当前桶的容量（缓冲区数组长度）。
             /// </summary>
             public int Capacity => this._buffers.Length;
+
+            /// <summary>
+            /// 初始化 <see cref="ByteArrayBucket"/> 实例。
+            /// </summary>
+            /// <param name="maxArrayCount">
+            /// 缓冲区的最高数量限制，null 表示不限制。
+            /// </param>
+            public ByteArrayBucket(int? maxArrayCount)
+            {
+                if (maxArrayCount > 0)
+                {
+                    this._maxArrayCount = maxArrayCount.Value;
+                    this._buffers = new byte[Math.Min(maxArrayCount.Value, Environment.ProcessorCount)][];
+                }
+                else
+                {
+                    this._maxArrayCount = int.MaxValue;
+                    this._buffers = new byte[Environment.ProcessorCount][];
+                }
+            }
+
 
             /// <summary>
             /// 从桶中租用一个字节数组，如果桶已满则自动扩容。
@@ -140,13 +169,19 @@ namespace RecyclableBuffer
                 {
                     this._lock.Enter(ref lockTaken);
 
-                    if (this._index >= this._buffers.Length)
+                    if (this._index < this._buffers.Length)
                     {
-                        Array.Resize(ref this._buffers, this._buffers.Length * 2);
+                        array = this._buffers[this._index];
+                        this._buffers[_index++] = null;
                     }
+                    else if (this._buffers.Length < this._maxArrayCount)
+                    {
+                        var newSize = Math.Min(this._buffers.Length * 2, this._maxArrayCount);
+                        Array.Resize(ref this._buffers, newSize);
 
-                    array = this._buffers[this._index];
-                    this._buffers[_index++] = null;
+                        array = this._buffers[this._index];
+                        this._buffers[_index++] = null;
+                    }
                 }
                 finally
                 {
@@ -158,6 +193,8 @@ namespace RecyclableBuffer
 
                 return array;
             }
+
+
 
             /// <summary>
             /// 将字节数组归还到桶中，供后续复用。

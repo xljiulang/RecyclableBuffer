@@ -8,9 +8,9 @@ namespace RecyclableBuffer
     {
         private readonly IBufferWriter<byte> _bufferWriter;
 
-        public WritableStream(IBufferWriter<byte> _bufferWriter)
+        public WritableStream(IBufferWriter<byte> bufferWriter)
         {
-            this._bufferWriter = _bufferWriter;
+            this._bufferWriter = bufferWriter;
         }
 
         public override bool CanRead => false;

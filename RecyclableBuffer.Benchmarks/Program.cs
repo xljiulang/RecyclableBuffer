@@ -7,9 +7,9 @@ namespace RecyclableBuffer.Benchmarks
         static void Main(string[] args)
         {
 #if DEBUG
-            var benchmark = new BuffersBenchmark();
+            var benchmark = new WriteBufferBenchmark();
             benchmark.Setup();
-            benchmark.MultipleSegmentBufferWriter_10();
+            benchmark.MultipleSegmentBufferWriter();
 #endif
             var summary = BenchmarkRunner.Run(typeof(Program).Assembly);
         }

@@ -22,12 +22,12 @@ namespace RecyclableBuffer
         /// <summary>
         /// 用于存储可复用缓冲区的并发队列。
         /// </summary>
-        private readonly ArrayBucket _arrayBucket = new();
+        private readonly ByteArrayBucket _arrayBucket = new();
 
         /// <summary>
         /// 获取一个使用 128KB 缓冲区大小且不限制数量的 <see cref="ByteArrayPool"/> 实例。
         /// </summary>
-        public static ByteArrayPool Default { get; } = new ByteArrayPool(8 );
+        public static ByteArrayPool Default { get; } = new ByteArrayPool(128 * 1024);
 
         /// <summary>
         /// 初始化 <see cref="ByteArrayPool"/> 实例，并指定缓冲区大小。
@@ -89,7 +89,7 @@ namespace RecyclableBuffer
         /// 表示用于存储和复用字节数组的桶，支持线程安全的租用和归还操作。
         /// </summary>
         [DebuggerDisplay("Capacity = {Capacity}")]
-        private sealed class ArrayBucket
+        private sealed class ByteArrayBucket
         {
             /// <summary>
             /// 当前桶中可用缓冲区的索引。
@@ -99,7 +99,7 @@ namespace RecyclableBuffer
             /// <summary>
             /// 用于保护缓冲区数组的自旋锁。
             /// </summary>
-            private SpinLock _lock = new SpinLock(Debugger.IsAttached);
+            private SpinLock _lock = new(Debugger.IsAttached);
 
             /// <summary>
             /// 存储可复用的字节数组缓冲区。

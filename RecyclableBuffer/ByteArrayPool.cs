@@ -38,12 +38,14 @@ namespace RecyclableBuffer
             this._arrayLength = 16 << index;
         }
 
+        /// <summary>
+        /// 计算指定无符号整数的以 2 为底的对数（向下取整）。
+        /// </summary>
+        /// <param name="value">要计算对数的无符号整数，必须大于 0。</param>
+        /// <returns>以 2 为底的对数值。</returns>
         private static int Log2(uint value)
         {
-            if (value == 0U)
-            {
-                value = 1U;
-            }
+            Debug.Assert(value != 0U);
 
             var log = 0;
             while ((value >>= 1) != 0)

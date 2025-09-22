@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.Numerics;
 using System.Threading;
 
 namespace RecyclableBuffer
@@ -35,8 +34,23 @@ namespace RecyclableBuffer
         /// <param name="arrayLength">每个缓冲区的字节大小。</param>
         public ByteArrayPool(int arrayLength)
         {
-            var index = BitOperations.Log2((uint)(arrayLength - 1) | 0xFu) - 3;
+            var index = Log2((uint)(arrayLength - 1) | 0xFu) - 3;
             this._arrayLength = 16 << index;
+        }
+
+        private static int Log2(uint value)
+        {
+            if (value == 0U)
+            {
+                value = 1U;
+            }
+
+            var log = 0;
+            while ((value >>= 1) != 0)
+            {
+                log++;
+            }
+            return log;
         }
 
         /// <summary>
@@ -79,7 +93,7 @@ namespace RecyclableBuffer
 
             if (clearArray)
             {
-                Array.Clear(array);
+                Array.Clear(array, 0, array.Length);
             }
             this._arrayBucket.Return(array);
         }

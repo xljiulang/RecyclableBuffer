@@ -28,7 +28,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取已写入的所有缓冲区组成的只读字节序列。
         /// </summary>
-        public override ReadOnlySequence<byte> WrittenSequence => new(WrittenMemory);
+        public override ReadOnlySequence<byte> WrittenSequence => new(_buffer.WritternMemory);
 
         /// <summary>
         /// 使用指定的初始容量和 <see cref="ArrayPool{Byte}.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
@@ -46,9 +46,7 @@ namespace RecyclableBuffer
         /// <param name="pool">用于租用缓冲区的池。</param>
         public SingleSegmentBufferWriter(int minimumLength, ArrayPool<byte> pool)
         {
-            ArgumentNullException.ThrowIfNull(pool);
-
-            _pool = pool;
+            _pool = pool ?? throw new ArgumentNullException(nameof(pool));
             _buffer = new RentedBuffer(pool, minimumLength);
         }
 

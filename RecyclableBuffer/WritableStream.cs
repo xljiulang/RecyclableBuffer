@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace RecyclableBuffer
 {
@@ -55,7 +53,6 @@ namespace RecyclableBuffer
             this._bufferWriter.Advance(1);
         }
 
-
         public override void Write(byte[] buffer, int offset, int count)
         {
             this._bufferWriter.Write(buffer.AsSpan(offset, count));
@@ -64,18 +61,6 @@ namespace RecyclableBuffer
         public override void Write(ReadOnlySpan<byte> buffer)
         {
             this._bufferWriter.Write(buffer);
-        }
-
-        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            this._bufferWriter.Write(buffer.AsSpan(offset, count));
-            return Task.CompletedTask;
-        }
-
-        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-            this._bufferWriter.Write(buffer.Span);
-            return ValueTask.CompletedTask;
         }
     }
 }

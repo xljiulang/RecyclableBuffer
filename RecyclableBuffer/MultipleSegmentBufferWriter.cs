@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace RecyclableBuffer
 {
@@ -41,8 +40,7 @@ namespace RecyclableBuffer
         /// <param name="pool">用于租用缓冲区的 <see cref="ByteArrayPool"/> 实例。</param>
         public MultipleSegmentBufferWriter(ByteArrayPool pool)
         {
-            ArgumentNullException.ThrowIfNull(pool);
-            this._pool = pool;
+            this._pool = pool ?? throw new ArgumentNullException(nameof(pool));
         }
 
         /// <summary>
@@ -137,21 +135,22 @@ namespace RecyclableBuffer
         {
             this.ThrowIfDisposed();
 
-            var buffers = CollectionsMarshal.AsSpan(this._buffers);
-            if (buffers.Length == 0)
+            var buffers = this._buffers;
+            if (buffers.Count == 0)
             {
                 return ReadOnlySequence<byte>.Empty;
             }
 
             var first = new RentedSegment(buffers[0]);
-            if (buffers.Length == 1)
+            if (buffers.Count == 1)
             {
                 return new ReadOnlySequence<byte>(first.Memory);
             }
 
             var last = first;
-            foreach (var buffer in buffers.Slice(1))
+            for (var i = 1; i < buffers.Count; i++)
             {
+                var buffer = buffers[i];
                 last = last.Append(buffer);
             }
 

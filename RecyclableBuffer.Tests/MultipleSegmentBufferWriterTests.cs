@@ -77,6 +77,18 @@ namespace RecyclableBuffer.Tests
             Assert.True(span.Length >= 10);
         }
 
+
+        [Fact]
+        public void Write_Buffer_Correctly()
+        {
+            using var writer = new MultipleSegmentBufferWriter();
+            var bytes = new byte[1024 * 300];
+            Random.Shared.NextBytes(bytes);
+            writer.Write(bytes);
+
+            Assert.Equal(bytes, writer.WrittenSequence.ToArray());
+        }
+
         [Fact]
         public void WrittenSequence_ReturnsCorrectData_AcrossMultipleSegments()
         {

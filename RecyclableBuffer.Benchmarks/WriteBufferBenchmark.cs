@@ -2,6 +2,7 @@
 using DotNext.Buffers;
 using Microsoft.IO;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace RecyclableBuffer.Benchmarks
 {
@@ -25,35 +26,41 @@ namespace RecyclableBuffer.Benchmarks
         public void SingleSegmentBufferWriter()
         {
             const int DefaultInitialCapacity = 128 * 1024;
-            using var bufferWriter = new SingleSegmentBufferWriter(DefaultInitialCapacity);
-            bufferWriter.Write(this.buffer);
+            using var target = new SingleSegmentBufferWriter(DefaultInitialCapacity);
+            WriteBuffer(target);
         }
 
         [Benchmark(Baseline = true)]
         public void MultipleSegmentBufferWriter()
         {
-            using var bufferWriter = new MultipleSegmentBufferWriter();
-            bufferWriter.Write(this.buffer);
+            using var target = new MultipleSegmentBufferWriter();
+            WriteBuffer(target);
         }
 
         [Benchmark]
         public void Microsoft_RecyclableMemoryStream()
         {
-            using var bufferWriter = manager.GetStream();
-            bufferWriter.Write(this.buffer);
+            using var target = manager.GetStream();
+            WriteBuffer(target);
         }
 
         [Benchmark]
         public void DotNext_PoolingArrayBufferWriter()
         {
-            using var bufferWriter = new PoolingArrayBufferWriter<byte>();
-            bufferWriter.Write(this.buffer);
+            using var target = new PoolingArrayBufferWriter<byte>();
+            WriteBuffer(target);
         }
 
         [Benchmark]
         public void DotNext_SparseBufferWriter()
         {
-            using var bufferWriter = new SparseBufferWriter<byte>();
+            using var target = new SparseBufferWriter<byte>();
+            WriteBuffer(target);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteBuffer(IBufferWriter<byte> bufferWriter)
+        {
             bufferWriter.Write(this.buffer);
         }
     }

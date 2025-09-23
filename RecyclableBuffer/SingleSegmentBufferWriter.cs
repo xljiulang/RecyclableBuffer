@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace RecyclableBuffer
@@ -14,20 +15,48 @@ namespace RecyclableBuffer
         private readonly ArrayPool<byte> _pool;
 
         /// <inheritdoc/>
-        public override int Length => this._buffer.Length;
+        public override int Length
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return this._buffer.Length;
+            }
+        }
 
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlySpan{Byte}"/>。
         /// </summary>
-        public ReadOnlySpan<byte> WrittenSpan => _buffer.WritternSpan;
+        public ReadOnlySpan<byte> WrittenSpan
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _buffer.WritternSpan;
+            }
+        }
 
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlyMemory{Byte}"/>。
         /// </summary>
-        public ReadOnlyMemory<byte> WrittenMemory => _buffer.WritternMemory;
+        public ReadOnlyMemory<byte> WrittenMemory
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _buffer.WritternMemory;
+            }
+        }
 
         /// <inheritdoc/>
-        public override ReadOnlySequence<byte> WrittenSequence => new(_buffer.WritternMemory);
+        public override ReadOnlySequence<byte> WrittenSequence
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return new(_buffer.WritternMemory);
+            }
+        }
 
         /// <summary>
         /// 使用指定的初始容量和 <see cref="ArrayPool{Byte}.Shared"/> 初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
@@ -76,6 +105,8 @@ namespace RecyclableBuffer
             {
                 ResizeBuffer(sizeHint);
                 memory = _buffer.GetMemory(sizeHint);
+
+                Debug.Assert(memory.Length > 0);
             }
             return memory;
         }
@@ -96,6 +127,8 @@ namespace RecyclableBuffer
             {
                 ResizeBuffer(sizeHint);
                 span = _buffer.GetSpan(sizeHint);
+
+                Debug.Assert(span.Length > 0);
             }
             return span;
         }

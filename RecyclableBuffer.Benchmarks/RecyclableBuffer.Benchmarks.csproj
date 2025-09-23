@@ -11,6 +11,7 @@
 		<ProjectReference Include="..\RecyclableBuffer\RecyclableBuffer.csproj" />
 		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
 		<PackageReference Include="BenchmarkDotNet" Version="0.15.3" />
+		<PackageReference Include="DotNext.IO" Version="5.25.0" />
 	</ItemGroup>
 
 </Project>

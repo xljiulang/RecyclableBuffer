@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using DotNext.Buffers;
 using Microsoft.IO;
 
 namespace RecyclableBuffer.Benchmarks
@@ -27,9 +28,16 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark]
-        public void RecyclableMemoryStream()
+        public void Microsoft_RecyclableMemoryStream()
         {
             using var bufferWriter = manager.GetStream();
+            var span = bufferWriter.GetSpan(this.SizeHint);
+        }
+
+        [Benchmark]
+        public void DotNext_PoolingArrayBufferWriter()
+        {
+            using var bufferWriter = new PoolingArrayBufferWriter<byte>();
             var span = bufferWriter.GetSpan(this.SizeHint);
         }
     }

@@ -22,10 +22,44 @@ namespace RecyclableBuffer
         private readonly List<RentedBuffer> _buffers = [];
 
         /// <inheritdoc/>
-        public override int Length => this._length;
+        public override int Length
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return this._length;
+            }
+        }
 
         /// <inheritdoc/>
-        public override ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
+        public override ReadOnlySequence<byte> WrittenSequence
+        {
+            get
+            {
+                this.ThrowIfDisposed();
+
+                var buffers = this._buffers;
+                if (buffers.Count == 0)
+                {
+                    return ReadOnlySequence<byte>.Empty;
+                }
+
+                var first = new RentedSegment(buffers[0]);
+                if (buffers.Count == 1)
+                {
+                    return new ReadOnlySequence<byte>(first.Memory);
+                }
+
+                var last = first;
+                for (var i = 1; i < buffers.Count; i++)
+                {
+                    var buffer = buffers[i];
+                    last = last.Append(buffer);
+                }
+
+                return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
+            }
+        }
 
         /// <summary>
         /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="ByteArrayPool.Default"/> 缓冲区池。
@@ -129,35 +163,6 @@ namespace RecyclableBuffer
             return buffer;
         }
 
-        /// <summary>
-        /// 获取已写入的所有缓冲区组成的只读字节序列。
-        /// </summary>
-        /// <returns>只读字节序列。</returns>
-        private ReadOnlySequence<byte> GetWrittenSequence()
-        {
-            this.ThrowIfDisposed();
-
-            var buffers = this._buffers;
-            if (buffers.Count == 0)
-            {
-                return ReadOnlySequence<byte>.Empty;
-            }
-
-            var first = new RentedSegment(buffers[0]);
-            if (buffers.Count == 1)
-            {
-                return new ReadOnlySequence<byte>(first.Memory);
-            }
-
-            var last = first;
-            for (var i = 1; i < buffers.Count; i++)
-            {
-                var buffer = buffers[i];
-                last = last.Append(buffer);
-            }
-
-            return new ReadOnlySequence<byte>(first, 0, last, last.Memory.Length);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfDisposed()

@@ -8,10 +8,10 @@ namespace RecyclableBuffer
 {
     /// <summary>
     /// 表示多内存段的可回收缓冲区写入器
-    /// </summary>
-    [DebuggerDisplay("WrittenBytes = {WrittenSequence.Length}, BuffersCount = {_buffers.Count}")]
+    /// </summary> 
     public sealed class MultipleSegmentBufferWriter : SegmentBufferWriter
     {
+        private int _length = 0;
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
         private readonly ByteArrayPool _pool;
@@ -21,9 +21,10 @@ namespace RecyclableBuffer
         /// </summary>
         private readonly List<RentedBuffer> _buffers = [];
 
-        /// <summary>
-        /// 获取已写入的所有缓冲区组成的只读字节序列。
-        /// </summary>
+        /// <inheritdoc/>
+        public override int Length => this._length;
+
+        /// <inheritdoc/>
         public override ReadOnlySequence<byte> WrittenSequence => this.GetWrittenSequence();
 
         /// <summary>
@@ -57,6 +58,7 @@ namespace RecyclableBuffer
             else
             {
                 this._lastBuffer.Advance(count);
+                this._length += count;
             }
 
             static void Throw()
@@ -186,6 +188,7 @@ namespace RecyclableBuffer
 
             this._buffers.Clear();
             this._lastBuffer = null;
+            this._length = 0;
 
             this._disposed = true;
         }

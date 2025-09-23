@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO;
 
 namespace RecyclableBuffer
@@ -7,8 +8,14 @@ namespace RecyclableBuffer
     /// <summary>
     /// 表示分段缓冲区写入器的抽象基类。
     /// </summary>
+    [DebuggerDisplay("Length = {Length}")]
     public abstract class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
     {
+        /// <summary>
+        /// 获取当前写入器已写入的总字节数。
+        /// </summary>
+        public abstract int Length { get; }
+
         /// <summary>
         /// 获取已写入的所有缓冲区组成的只读字节序列。
         /// </summary>

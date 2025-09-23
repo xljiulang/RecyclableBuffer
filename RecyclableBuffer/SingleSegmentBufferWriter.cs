@@ -1,19 +1,20 @@
 ﻿using System;
 using System.Buffers;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace RecyclableBuffer
 {
     /// <summary>
     /// 表示单内存段的可回收缓冲区写入器
-    /// </summary>
-    [DebuggerDisplay("WrittenBytes = {_buffer.Length}, Capacity = {_buffer.Capacity}")]
+    /// </summary>  
     public sealed class SingleSegmentBufferWriter : SegmentBufferWriter
     {
         private bool _disposed = false;
         private RentedBuffer _buffer;
         private readonly ArrayPool<byte> _pool;
+
+        /// <inheritdoc/>
+        public override int Length => this._buffer.Length;
 
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlySpan{Byte}"/>。
@@ -25,9 +26,7 @@ namespace RecyclableBuffer
         /// </summary>
         public ReadOnlyMemory<byte> WrittenMemory => _buffer.WritternMemory;
 
-        /// <summary>
-        /// 获取已写入的所有缓冲区组成的只读字节序列。
-        /// </summary>
+        /// <inheritdoc/>
         public override ReadOnlySequence<byte> WrittenSequence => new(_buffer.WritternMemory);
 
         /// <summary>

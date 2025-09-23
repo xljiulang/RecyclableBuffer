@@ -113,7 +113,7 @@ namespace RecyclableBuffer
             /// <summary>
             /// 缓冲区的最高数量限制
             /// </summary>
-            private readonly int _maxArrayCount;
+            private readonly int _maxCapacity;
 
             /// <summary>
             /// 当前桶中可用缓冲区的索引。
@@ -138,19 +138,19 @@ namespace RecyclableBuffer
             /// <summary>
             /// 初始化 <see cref="ByteArrayBucket"/> 实例。
             /// </summary>
-            /// <param name="maxArrayCount">
+            /// <param name="maxCapacity">
             /// 缓冲区的最高数量限制，null 表示不限制。
             /// </param>
-            public ByteArrayBucket(int? maxArrayCount)
+            public ByteArrayBucket(int? maxCapacity)
             {
-                if (maxArrayCount > 0)
+                if (maxCapacity > 0)
                 {
-                    this._maxArrayCount = maxArrayCount.Value;
-                    this._buffers = new byte[Math.Min(maxArrayCount.Value, Environment.ProcessorCount)][];
+                    this._maxCapacity = maxCapacity.Value;
+                    this._buffers = new byte[Math.Min(maxCapacity.Value, Environment.ProcessorCount)][];
                 }
                 else
                 {
-                    this._maxArrayCount = int.MaxValue;
+                    this._maxCapacity = int.MaxValue;
                     this._buffers = new byte[Environment.ProcessorCount][];
                 }
             }
@@ -169,14 +169,15 @@ namespace RecyclableBuffer
                 {
                     this._lock.Enter(ref lockTaken);
 
-                    if (this._index < this._buffers.Length)
+                    var capacity = this._buffers.Length;
+                    if (this._index < capacity)
                     {
                         array = this._buffers[this._index];
                         this._buffers[_index++] = null;
                     }
-                    else if (this._buffers.Length < this._maxArrayCount)
+                    else if (capacity < this._maxCapacity)
                     {
-                        var newSize = Math.Min(this._buffers.Length * 2, this._maxArrayCount);
+                        var newSize = Math.Min(capacity * 2, this._maxCapacity);
                         Array.Resize(ref this._buffers, newSize);
 
                         array = this._buffers[this._index];

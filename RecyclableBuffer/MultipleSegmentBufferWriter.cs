@@ -2,7 +2,10 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RecyclableBuffer
 {
@@ -11,7 +14,7 @@ namespace RecyclableBuffer
     /// </summary> 
     public sealed class MultipleSegmentBufferWriter : SegmentBufferWriter
     {
-        private int _length = 0;
+        private long _length = 0;
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
         private readonly ByteArrayPool _pool;
@@ -22,7 +25,7 @@ namespace RecyclableBuffer
         private readonly List<RentedBuffer> _buffers = [];
 
         /// <inheritdoc/>
-        public override int Length
+        public override long Length
         {
             get
             {
@@ -163,6 +166,13 @@ namespace RecyclableBuffer
             return buffer;
         }
 
+        /// <inheritdoc/>      
+        public override Stream AsReadableStream()
+        {
+            ThrowIfDisposed();
+            return new BufferWriterReadableStream(this);
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfDisposed()
@@ -196,6 +206,69 @@ namespace RecyclableBuffer
             this._length = 0;
 
             this._disposed = true;
+        }
+
+
+        private sealed class BufferWriterReadableStream : ReadableStream
+        {
+            private ReadOnlySequence<byte>? _writtenSequence;
+            private readonly MultipleSegmentBufferWriter _bufferWriter;
+
+            public override long Length => this._bufferWriter.Length;
+
+            public BufferWriterReadableStream(MultipleSegmentBufferWriter bufferWriter)
+            {
+                this._bufferWriter = bufferWriter;
+            }
+
+            public override void CopyTo(Stream destination, int bufferSize)
+            {
+                var sequence = this.GetWrittenSequence().Slice(this.Position);
+                foreach (var segment in sequence)
+                {
+                    destination.Write(segment.Span);
+                }
+            }
+
+            public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+            {
+                var sequence = this.GetWrittenSequence().Slice(this.Position);
+                foreach (var segment in sequence)
+                {
+                    await destination.WriteAsync(segment, cancellationToken);
+                }
+            }
+
+            public override int Read(Span<byte> buffer)
+            {
+                var writtenSequence = this.GetWrittenSequence();
+                var remaining = writtenSequence.Length - this.Position;
+
+                if (remaining <= 0L)
+                {
+                    return 0;
+                }
+
+                var bytesToRead = (int)Math.Min(buffer.Length, remaining);
+                writtenSequence.Slice(this.Position, bytesToRead).CopyTo(buffer);
+
+                this.Position += bytesToRead;
+                return bytesToRead;
+            }
+
+
+            private ReadOnlySequence<byte> GetWrittenSequence()
+            {
+                if (this._writtenSequence == null ||
+                    this._writtenSequence.Value.Length < this._bufferWriter.Length)
+                {
+                    var writtenSequence = this._bufferWriter.WrittenSequence;
+                    this._writtenSequence = writtenSequence;
+                    return writtenSequence;
+                }
+
+                return this._writtenSequence.Value;
+            }
         }
     }
 }

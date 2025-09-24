@@ -14,7 +14,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取当前写入器已写入的总字节数。
         /// </summary>
-        public abstract int Length { get; }
+        public abstract long Length { get; }
 
         /// <summary>
         /// 获取已写入的所有缓冲区组成的只读字节序列。
@@ -54,10 +54,7 @@ namespace RecyclableBuffer
         /// 转换成只读的 <see cref="Stream"/>。
         /// </summary>
         /// <returns>包装的 <see cref="Stream"/> 实例。</returns>
-        public Stream AsReadableStream()
-        {
-            return new ReadableStream(this.WrittenSequence);
-        }
+        public abstract Stream AsReadableStream();
 
         /// <summary>
         /// 释放所有租用的缓冲区并归还到池。

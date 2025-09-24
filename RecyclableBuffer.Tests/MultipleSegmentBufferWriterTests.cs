@@ -98,9 +98,16 @@ namespace RecyclableBuffer.Tests
             using var writer = new MultipleSegmentBufferWriter();
             writer.AsWritableStream().Write(bytes);
 
-            var stream = new MemoryStream();
-            writer.AsReadableStream().CopyTo(stream);
-            Assert.Equal(bytes, stream.ToArray());
+            var memoryStream = new MemoryStream();
+
+            var readableStream = writer.AsReadableStream();
+            readableStream.CopyTo(memoryStream);
+            Assert.Equal(bytes, memoryStream.ToArray());
+
+            readableStream.Position = 0L;
+            var buffer = new byte[bytes.Length];
+            readableStream.ReadAtLeast(buffer, bytes.Length);
+            Assert.Equal(bytes, buffer);
         }
 
         [Fact]

@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RecyclableBuffer
 {
@@ -15,7 +18,7 @@ namespace RecyclableBuffer
         private readonly ArrayPool<byte> _pool;
 
         /// <inheritdoc/>
-        public override int Length
+        public override long Length
         {
             get
             {
@@ -160,6 +163,14 @@ namespace RecyclableBuffer
         }
 
 
+        /// <inheritdoc/>      
+        public override Stream AsReadableStream()
+        {
+            ThrowIfDisposed();
+            return new BufferWriterReadableStream(this);
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfDisposed()
         {
@@ -184,6 +195,48 @@ namespace RecyclableBuffer
 
             _buffer.Dispose();
             _disposed = true;
+        }
+
+
+        private sealed class BufferWriterReadableStream : ReadableStream
+        {
+            private readonly SingleSegmentBufferWriter _bufferWriter;
+
+            public override long Length => this._bufferWriter.Length;
+
+            public BufferWriterReadableStream(SingleSegmentBufferWriter bufferWriter)
+            {
+                this._bufferWriter = bufferWriter;
+            }
+
+            public override void CopyTo(Stream destination, int bufferSize)
+            {
+                var span = this._bufferWriter.WrittenSpan.Slice((int)this.Position);
+                destination.Write(span);
+            }
+
+            public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+            {
+                var memory = this._bufferWriter.WrittenMemory.Slice((int)this.Position);
+                return destination.WriteAsync(memory, cancellationToken).AsTask();
+            }
+
+            public override int Read(Span<byte> buffer)
+            {
+                var writtenSpan = this._bufferWriter.WrittenSpan;
+                var remaining = writtenSpan.Length - this.Position;
+
+                if (remaining <= 0L)
+                {
+                    return 0;
+                }
+
+                var bytesToRead = (int)Math.Min(buffer.Length, remaining);
+                writtenSpan.Slice((int)this.Position, bytesToRead).CopyTo(buffer);
+
+                this.Position += bytesToRead;
+                return bytesToRead;
+            }
         }
     }
 }

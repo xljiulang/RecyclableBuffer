@@ -1,32 +1,24 @@
 ﻿using System;
-using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RecyclableBuffer
 {
-    sealed class ReadableStream : Stream
+    abstract class ReadableStream : Stream
     {
         private long _position = 0L;
-        private readonly ReadOnlySequence<byte> _sequence;
 
-        public ReadableStream(ReadOnlySequence<byte> sequence)
-        {
-            this._sequence = sequence;
-        }
+        public sealed override bool CanRead => true;
+        public sealed override bool CanSeek => true;
+        public sealed override bool CanWrite => false;
 
-        public override bool CanRead => true;
-        public override bool CanSeek => true;
-        public override bool CanWrite => false;
-        public override long Length => _sequence.Length;
-
-        public override long Position
+        public sealed override long Position
         {
             get => this._position;
             set
             {
-                if (value < 0 || value > this._sequence.Length)
+                if (value < 0 || value > this.Length)
                 {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }
@@ -34,67 +26,28 @@ namespace RecyclableBuffer
             }
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public sealed override int Read(byte[] buffer, int offset, int count)
         {
             return this.Read(buffer.AsSpan(offset, count));
         }
 
-        public override int Read(Span<byte> buffer)
-        {
-            if (this._position >= this._sequence.Length)
-            {
-                return 0;
-            }
+        public abstract override int Read(Span<byte> buffer);
 
-            var remaining = this._sequence.Length - this._position;
-            var bytesToRead = (int)Math.Min(buffer.Length, remaining);
+        public abstract override void CopyTo(Stream destination, int bufferSize);
 
-            this._sequence.Slice(this._position, bytesToRead).CopyTo(buffer);
-            this._position += bytesToRead;
-            return bytesToRead;
-        }
-         
-        public override void CopyTo(Stream destination, int bufferSize)
-        {
-            var sequence = this._sequence;
-            if (this._position > 0L)
-            {
-                sequence = sequence.Slice(this._position);
-            }
+        public abstract override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken);
 
-            foreach (var segment in sequence)
-            {
-                destination.Write(segment.Span);
-            }
-        }
-
-
-        public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
-        {
-            var sequence = this._sequence;
-            if (this._position > 0L)
-            {
-                sequence = sequence.Slice(this._position);
-            }
-
-            foreach (var segment in sequence)
-            {
-                await destination.WriteAsync(segment, cancellationToken);
-            }
-        }
-
-
-        public override long Seek(long offset, SeekOrigin origin)
+        public sealed override long Seek(long offset, SeekOrigin origin)
         {
             var newPosition = origin switch
             {
                 SeekOrigin.Begin => offset,
                 SeekOrigin.Current => this._position + offset,
-                SeekOrigin.End => this._sequence.Length + offset,
+                SeekOrigin.End => this.Length + offset,
                 _ => throw new ArgumentException("Invalid seek origin", nameof(origin)),
             };
 
-            if (newPosition < 0 || newPosition > this._sequence.Length)
+            if (newPosition < 0 || newPosition > this.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(offset));
             }
@@ -103,16 +56,16 @@ namespace RecyclableBuffer
             return newPosition;
         }
 
-        public override void Flush()
+        public sealed override void Flush()
         {
         }
 
-        public override void SetLength(long value)
+        public sealed override void SetLength(long value)
         {
             throw new NotSupportedException();
         }
 
-        public override void Write(byte[] buffer, int offset, int count)
+        public sealed override void Write(byte[] buffer, int offset, int count)
         {
             throw new NotSupportedException();
         }

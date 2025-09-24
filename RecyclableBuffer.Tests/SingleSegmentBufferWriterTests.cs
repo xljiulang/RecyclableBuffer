@@ -69,12 +69,26 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Write_Buffer_Correctly()
         {
-            using var writer = new SingleSegmentBufferWriter(1111);
             var bytes = new byte[1024 * 3 + 77];
             Random.Shared.NextBytes(bytes);
-            writer.Write(bytes);
 
+            using var writer = new SingleSegmentBufferWriter(1111);
+            writer.Write(bytes);
             Assert.Equal(bytes, writer.WrittenSequence.ToArray());
+        }
+
+        [Fact]
+        public void Write_Read_Stream_Correctly()
+        {
+            var bytes = new byte[1024 * 3 + 77];
+            Random.Shared.NextBytes(bytes);
+
+            using var writer = new SingleSegmentBufferWriter(1111);
+            writer.AsWritableStream().Write(bytes);
+
+            var stream = new MemoryStream();
+            writer.AsReadableStream().CopyTo(stream);
+            Assert.Equal(bytes, stream.ToArray());
         }
 
         [Fact]

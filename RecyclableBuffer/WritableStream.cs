@@ -48,9 +48,8 @@ namespace RecyclableBuffer
 
         public override void WriteByte(byte value)
         {
-            var span = this._bufferWriter.GetSpan(1);
-            span[0] = value;
-            this._bufferWriter.Advance(1);
+            this._bufferWriter.GetSpan(0)[0] = value;
+            this._bufferWriter.Advance(sizeof(byte));
         }
 
         public override void Write(byte[] buffer, int offset, int count)

@@ -6,9 +6,9 @@ namespace RecyclableBuffer
 {
     sealed class WritableStream : Stream
     {
-        private readonly IBufferWriter<byte> _bufferWriter;
+        private readonly SegmentBufferWriter _bufferWriter;
 
-        public WritableStream(IBufferWriter<byte> bufferWriter)
+        public WritableStream(SegmentBufferWriter bufferWriter)
         {
             this._bufferWriter = bufferWriter;
         }
@@ -19,7 +19,7 @@ namespace RecyclableBuffer
 
         public override bool CanWrite => true;
 
-        public override long Length => throw new NotSupportedException();
+        public override long Length => _bufferWriter.Length;
 
         public override long Position
         {

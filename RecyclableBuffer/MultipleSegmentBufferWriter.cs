@@ -155,8 +155,7 @@ namespace RecyclableBuffer
         /// 新增一个 <see cref="RentedBuffer"/> 并加入缓冲区列表。
         /// </summary>
         /// <param name="sizeHint">缓冲区大小。</param> 
-        /// <returns>新创建的 <see cref="RentedBuffer"/>。</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// <returns>新创建的 <see cref="RentedBuffer"/>。</returns>     
         private RentedBuffer AddRentedBuffer(int sizeHint)
         {
             this.ThrowIfDisposed();

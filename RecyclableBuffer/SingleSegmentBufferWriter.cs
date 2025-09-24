@@ -140,7 +140,6 @@ namespace RecyclableBuffer
         /// 扩容缓冲区以满足指定的最小空间需求。
         /// </summary>
         /// <param name="sizeHint">期望的最小长度。</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ResizeBuffer(int sizeHint)
         {
             if (sizeHint < 0)

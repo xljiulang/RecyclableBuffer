@@ -60,7 +60,7 @@ namespace RecyclableBuffer
         /// 增加已使用的缓冲区长度。
         /// </summary>
         /// <param name="count">要增加的字节数。</param>
-        /// <exception cref="ArgumentOutOfRangeException">如果 <paramref name="count"/> 超过剩余空间，则抛出异常。</exception>
+        /// <exception cref="ArgumentOutOfRangeException">如果 <paramref name="count"/> 超过剩余空间，则抛出异常。</exception> 
         public void Advance(int count)
         {
             if (count > this._buffer.Length - this._length)
@@ -80,50 +80,22 @@ namespace RecyclableBuffer
         /// 获取当前未使用部分的 <see cref="Span{Byte}"/>，可指定期望的最小长度。
         /// </summary>
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
-        /// <returns>满足长度要求的 <see cref="Span{Byte}"/>，否则返回空。</returns>
+        /// <returns>满足长度要求的 <see cref="Span{Byte}"/>，否则返回空。</returns> 
         public Span<byte> GetSpan(int sizeHint = 0)
         {
             var span = this._buffer.AsSpan(this._length);
-            if (span.IsEmpty)
-            {
-                return Span<byte>.Empty;
-            }
-
-            if (sizeHint == 0)
-            {
-                return span;
-            }
-
-            if (span.Length < sizeHint)
-            {
-                return Span<byte>.Empty;
-            }
-            return span;
+            return span.Length < sizeHint ? Span<byte>.Empty : span;
         }
 
         /// <summary>
         /// 获取当前未使用部分的 <see cref="Memory{Byte}"/>，可指定期望的最小长度。
         /// </summary>
         /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
-        /// <returns>满足长度要求的 <see cref="Memory{Byte}"/>，否则返回空。</returns>
+        /// <returns>满足长度要求的 <see cref="Memory{Byte}"/>，否则返回空。</returns> 
         public Memory<byte> GetMemory(int sizeHint = 0)
         {
             var memory = this._buffer.AsMemory(this._length);
-            if (memory.IsEmpty)
-            {
-                return Memory<byte>.Empty;
-            }
-
-            if (sizeHint == 0)
-            {
-                return memory;
-            }
-
-            if (memory.Length < sizeHint)
-            {
-                return Memory<byte>.Empty;
-            }
-            return memory;
+            return memory.Length < sizeHint ? Memory<byte>.Empty : memory;
         }
 
         /// <summary>

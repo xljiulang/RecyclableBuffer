@@ -18,6 +18,7 @@ namespace RecyclableBuffer
         private readonly ArrayPool<byte> _pool;
 
         /// <inheritdoc/>
+        /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override long Length
         {
             get
@@ -30,6 +31,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlySpan{Byte}"/>。
         /// </summary>
+        /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public ReadOnlySpan<byte> WrittenSpan
         {
             get
@@ -42,6 +44,7 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取已写入的字节数据的 <see cref="ReadOnlyMemory{Byte}"/>。
         /// </summary>
+        /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public ReadOnlyMemory<byte> WrittenMemory
         {
             get
@@ -52,6 +55,7 @@ namespace RecyclableBuffer
         }
 
         /// <inheritdoc/>
+        /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override ReadOnlySequence<byte> WrittenSequence
         {
             get
@@ -75,29 +79,23 @@ namespace RecyclableBuffer
         /// </summary>
         /// <param name="minimumLength">缓冲区的最小容量（字节）。</param>
         /// <param name="pool">用于租用缓冲区的池。</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public SingleSegmentBufferWriter(int minimumLength, ArrayPool<byte> pool)
         {
             _pool = pool ?? throw new ArgumentNullException(nameof(pool));
             _buffer = new RentedBuffer(pool, minimumLength);
         }
 
-        /// <summary>
-        /// 通知写入器已写入指定数量的字节。
-        /// </summary>
-        /// <param name="count">已写入的字节数。</param>
+        /// <inheritdoc/>
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
+        /// <exception cref="ArgumentOutOfRangeException">如果 <paramref name="count"/> 超过剩余空间，则抛出异常。</exception> 
         public override void Advance(int count)
         {
             ThrowIfDisposed();
             _buffer.Advance(count);
         }
 
-        /// <summary>
-        /// 获取用于写入的 <see cref="Memory{Byte}"/>，可指定期望的最小长度。
-        /// 若空间不足则自动扩容。
-        /// </summary>
-        /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
-        /// <returns>满足长度要求的 <see cref="Memory{Byte}"/>。</returns>
+        /// <inheritdoc/>
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override Memory<byte> GetMemory(int sizeHint = 0)
         {
@@ -114,12 +112,7 @@ namespace RecyclableBuffer
             return memory;
         }
 
-        /// <summary>
-        /// 获取用于写入的 <see cref="Span{Byte}"/>，可指定期望的最小长度。
-        /// 若空间不足则自动扩容。
-        /// </summary>
-        /// <param name="sizeHint">期望的最小长度，默认为 0。</param>
-        /// <returns>满足长度要求的 <see cref="Span{Byte}"/>。</returns>
+        /// <inheritdoc/>
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
         public override Span<byte> GetSpan(int sizeHint = 0)
         {
@@ -162,14 +155,18 @@ namespace RecyclableBuffer
         }
 
 
-        /// <inheritdoc/>      
+        /// <inheritdoc/>
+        /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>"
         public override Stream AsReadableStream()
         {
             ThrowIfDisposed();
             return new BufferWriterReadableStream(this);
         }
 
-
+        /// <summary>
+        /// 如果对象已释放则抛出 <see cref="ObjectDisposedException"/> 异常。
+        /// </summary>
+        /// <exception cref="ObjectDisposedException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfDisposed()
         {

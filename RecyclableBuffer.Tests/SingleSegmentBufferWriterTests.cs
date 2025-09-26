@@ -24,8 +24,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Constructor_WithPoolAndCapacity_ShouldAllocateBuffer()
         {
-            var pool = ByteArrayPool.Shared;
-            using var writer = new SingleSegmentBufferWriter(32, pool);
+            using var writer = new SingleSegmentBufferWriter(32, ArrayPool<byte>.Shared);
             Assert.True(writer.WrittenSpan.Length == 0);
         }
 
@@ -82,7 +81,7 @@ namespace RecyclableBuffer.Tests
         {
             var bytes = new byte[1024 * 3 + 77];
             for (var i = 0; i < COUNT; i++)
-            {               
+            {
                 Random.Shared.NextBytes(bytes);
 
                 using var writer = new SingleSegmentBufferWriter(1111);
@@ -96,7 +95,7 @@ namespace RecyclableBuffer.Tests
         {
             var bytes = new byte[1024 * 3 + 77];
             for (var i = 0; i < COUNT; i++)
-            {             
+            {
                 Random.Shared.NextBytes(bytes);
 
                 using var writer = new SingleSegmentBufferWriter(1111);

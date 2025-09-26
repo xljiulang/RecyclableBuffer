@@ -10,7 +10,9 @@ namespace RecyclableBuffer.Benchmarks
     [MemoryDiagnoser]
     public class WriteBufferParallelBenchmark
     {
+        const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
+        private static readonly ByteArrayBucket fixedSizeByteArrayBucket = ByteArrayBucket.CreateFixedSize(ARRAY_LENGTH, 32);
 
         public const int COUNT = 1_0000;
 
@@ -21,7 +23,7 @@ namespace RecyclableBuffer.Benchmarks
 
         private static readonly ParallelOptions options = new()
         {
-            MaxDegreeOfParallelism = Environment.ProcessorCount / 2
+            MaxDegreeOfParallelism = Environment.ProcessorCount
         };
 
         [GlobalSetup]
@@ -33,13 +35,13 @@ namespace RecyclableBuffer.Benchmarks
         [Benchmark]
         public void SingleSegmentBufferWriter()
         {
-            const int DefaultInitialCapacity = 128 * 1024;
             Parallel.For(0, COUNT, options, _ =>
             {
-                using var target = new SingleSegmentBufferWriter(DefaultInitialCapacity);
+                using var target = new SingleSegmentBufferWriter(ARRAY_LENGTH);
                 WriteBuffer(target);
             });
         }
+
 
         [Benchmark(Baseline = true)]
         public void MultipleSegmentBufferWriter_Shared()
@@ -52,11 +54,21 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark]
-        public void MultipleSegmentBufferWriter_Default()
+        public void MultipleSegmentBufferWriter_Scalable()
         {
             Parallel.For(0, COUNT, options, _ =>
             {
-                using var target = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
+                using var target = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                WriteBuffer(target);
+            });
+        }
+
+        [Benchmark]
+        public void MultipleSegmentBufferWriter_FixedSize()
+        {
+            Parallel.For(0, COUNT, options, _ =>
+            {
+                using var target = new MultipleSegmentBufferWriter(fixedSizeByteArrayBucket);
                 WriteBuffer(target);
             });
         }
@@ -70,6 +82,7 @@ namespace RecyclableBuffer.Benchmarks
                 WriteBuffer(target);
             });
         }
+
 
         [Benchmark]
         public void DotNext_PoolingArrayBufferWriter()

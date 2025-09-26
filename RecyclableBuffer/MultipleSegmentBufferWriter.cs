@@ -67,23 +67,35 @@ namespace RecyclableBuffer
         }
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="SharedByteArrayPool.Size128KB"/> 缓冲区池。
-        /// <para>此构造方式在高并发场景中表现更优</para>
-        /// </summary> 
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="SharedByteArrayPool"/> 缓冲区池。
+        /// </summary>  
         public MultipleSegmentBufferWriter()
         {
-            this._pool = SharedByteArrayPool.Size128KB;
+            this._pool = SharedByteArrayPool.Size12KB;
         }
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的缓冲区池。
-        /// <para>此构造方式在低并发场景中表现更优</para>
-        /// </summary>
-        /// <param name="pool">用于租用缓冲区的 <see cref="ByteArrayPool"/> 实例。</param>
-        /// <exception cref="ArgumentNullException">如果 <paramref name="pool"/> 为 null，则抛出异常。</exception>"
-        public MultipleSegmentBufferWriter(ByteArrayPool pool)
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="SharedByteArrayPool"/> 缓冲区池。
+        /// </summary> 
+        /// <param name="arrayLength">每个缓冲区的字节数组长度</param>
+        public MultipleSegmentBufferWriter(int arrayLength)
         {
-            this._pool = pool ?? throw new ArgumentNullException(nameof(pool));
+            this._pool = new SharedByteArrayPool(arrayLength);
+        }
+
+        /// <summary>
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的 <see cref="ByteArrayBucket"/> 缓冲区桶。
+        /// </summary>
+        /// <param name="arrayBucket">用于存储和复用字节数组的桶，不能为空。</param>
+        /// <exception cref="ArgumentNullException">当 <paramref name="arrayBucket"/> 为 <c>null</c> 时抛出。</exception>
+        public MultipleSegmentBufferWriter(ByteArrayBucket arrayBucket)
+        {
+            if (arrayBucket == null)
+            {
+                throw new ArgumentNullException(nameof(arrayBucket));
+            }
+
+            this._pool = new ByteArrayPool(arrayBucket);
         }
 
 
@@ -214,19 +226,18 @@ namespace RecyclableBuffer
 
         private sealed class SharedByteArrayPool : ArrayPool<byte>
         {
-            private const int MinArrayLength = 128 * 1024; // 128KB
+            private readonly int _arrayLength;
 
-            /// <summary>
-            /// <para>每个 CPU 核心独享 128KB/块 * 32块 = 4MB 的可复用缓冲区</para>
-            /// <para>当缓冲区数量不够时，尝试向其它 CPU 核心租借缓冲区</para>
-            /// <para>当所有 CPU 核心的缓冲区都租借不到时，向 256KB 的缓冲区冲租借</para>
-            /// <para>当 256KB 的缓冲区借不到时，直接创建新的缓冲区</para>
-            /// </summary>
-            public static readonly SharedByteArrayPool Size128KB = new();
+            public static readonly SharedByteArrayPool Size12KB = new(128 * 1024);
+
+            public SharedByteArrayPool(int arrayLength)
+            {
+                this._arrayLength = ByteArrayBucket.GetMaxArrayLength(arrayLength);
+            }
 
             public override byte[] Rent(int minimumLength)
             {
-                return Shared.Rent(Math.Max(minimumLength, MinArrayLength));
+                return Shared.Rent(Math.Max(minimumLength, _arrayLength));
             }
 
             public override void Return(byte[] array, bool clearArray = false)

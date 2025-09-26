@@ -9,7 +9,9 @@ namespace RecyclableBuffer.Benchmarks
     [MemoryDiagnoser]
     public class WriteBufferBenchmark
     {
+        const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
+        private static readonly ByteArrayBucket fixedSizeByteArrayBucket = ByteArrayBucket.CreateFixedSize(ARRAY_LENGTH, 32);
 
         [Params(1024, 8 * 1024, 512 * 1024)]
         public int BufferSize = 1024 * 1024;
@@ -25,8 +27,7 @@ namespace RecyclableBuffer.Benchmarks
         [Benchmark]
         public void SingleSegmentBufferWriter()
         {
-            const int DefaultInitialCapacity = 128 * 1024;
-            using var target = new SingleSegmentBufferWriter(DefaultInitialCapacity);
+            using var target = new SingleSegmentBufferWriter(ARRAY_LENGTH);
             WriteBuffer(target);
         }
 
@@ -38,9 +39,16 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark]
-        public void MultipleSegmentBufferWriter_Default()
+        public void MultipleSegmentBufferWriter_Scalable()
         {
-            using var target = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
+            using var target = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            WriteBuffer(target);
+        }
+
+        [Benchmark]
+        public void MultipleSegmentBufferWriter_FixedSize()
+        {
+            using var target = new MultipleSegmentBufferWriter(fixedSizeByteArrayBucket);
             WriteBuffer(target);
         }
 

@@ -11,7 +11,7 @@ namespace RecyclableBuffer.Benchmarks
     {
         private static readonly RecyclableMemoryStreamManager manager = new();
 
-        [Params(1024, 8 * 1024, 128 * 1024 + 1)]
+        [Params(1024, 8 * 1024, 512 * 1024)]
         public int BufferSize = 1024 * 1024;
 
         private byte[] buffer = [];

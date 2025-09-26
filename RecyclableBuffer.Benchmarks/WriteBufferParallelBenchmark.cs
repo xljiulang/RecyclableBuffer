@@ -13,9 +13,13 @@ namespace RecyclableBuffer.Benchmarks
         private static readonly RecyclableMemoryStreamManager manager = new();
 
         public const int COUNT = 1_0000;
-        public int BufferSize = 8 * 1024;
+
+        [Params(1024, 8 * 1024, 512 * 1024)]
+        public int BufferSize = 1024;
+
         private byte[] buffer = [];
-        private readonly ParallelOptions options = new()
+
+        private static readonly ParallelOptions options = new()
         {
             MaxDegreeOfParallelism = Environment.ProcessorCount / 2
         };

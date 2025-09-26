@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace RecyclableBuffer
@@ -14,6 +15,11 @@ namespace RecyclableBuffer
     public sealed class ByteArrayPool : ArrayPool<byte>
     {
         /// <summary>
+        /// 获取静态线程本地存储的桶索引。
+        /// </summary>
+        private readonly int _stIndex;
+
+        /// <summary>
         /// 每个缓冲区的字节大小。
         /// </summary>
         private readonly int _arrayLength;
@@ -23,6 +29,16 @@ namespace RecyclableBuffer
         /// </summary>
         private readonly ByteArrayBucket _arrayBucket;
 
+        /// <summary>
+        /// 静态线程本地存储的缓冲区桶，用于减少锁竞争。
+        /// </summary>
+        [ThreadStatic]
+        private static byte[]?[]? _stArrayBucket;
+
+        /// <summary>
+        /// 静态线程本地存储的桶数组长度。
+        /// </summary>
+        private static readonly int _stArrayCount = SelectBucketIndex(int.MaxValue) + 1;
 
         /// <summary>
         /// 获取一个使用 128KB 缓冲区大小且不限制数量的 <see cref="ByteArrayPool"/> 实例。
@@ -36,27 +52,34 @@ namespace RecyclableBuffer
         /// <param name="maxArrayCount">缓冲区的最高数量限制，null 表示不限制</param>
         public ByteArrayPool(int arrayLength, int? maxArrayCount = null)
         {
-            var index = Log2((uint)(arrayLength - 1) | 0xFu) - 3;
+            var index = SelectBucketIndex(arrayLength);
+
+            this._stIndex = index;
             this._arrayLength = 16 << index;
             this._arrayBucket = new ByteArrayBucket(maxArrayCount);
         }
 
         /// <summary>
-        /// 计算指定无符号整数的以 2 为底的对数（向下取整）。
+        /// 选择适当的桶索引以容纳指定大小的缓冲区。
         /// </summary>
-        /// <param name="value">要计算对数的无符号整数，必须大于 0。</param>
-        /// <returns>以 2 为底的对数值。</returns>
-        private static int Log2(uint value)
+        /// <param name="arrayLength"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SelectBucketIndex(int arrayLength)
         {
-            Debug.Assert(value != 0U);
+            return Log2((uint)((arrayLength - 1) | 0xF)) - 3;
 
-            var log = 0;
-            while ((value >>= 1) != 0)
+            static int Log2(uint value)
             {
-                log++;
+                var log = 0;
+                while ((value >>= 1) != 0)
+                {
+                    log++;
+                }
+                return log;
             }
-            return log;
         }
+
 
         /// <summary>
         /// 从池中租用一个字节数组，长度至少为 <paramref name="minimumLength"/>。
@@ -72,10 +95,22 @@ namespace RecyclableBuffer
             {
                 return Shared.Rent(minimumLength);
             }
-            else
+
+            // 优先从线程本地存储的桶中租用，减少锁竞争
+            var stBucket = _stArrayBucket;
+            if (stBucket != null)
             {
-                return this._arrayBucket.Rent() ?? new byte[this._arrayLength];
+                ref var stArrayRef = ref stBucket[this._stIndex];
+                var stArray = stArrayRef;
+                if (stArray != null)
+                {
+                    stArrayRef = null;
+                    return stArray;
+                }
             }
+
+            return this._arrayBucket.Rent() ?? new byte[this._arrayLength];
+
         }
 
         /// <summary>
@@ -100,7 +135,26 @@ namespace RecyclableBuffer
             {
                 Array.Clear(array, 0, array.Length);
             }
-            this._arrayBucket.Return(array);
+
+            // 优先归还至线程本地存储的桶，减少锁竞争
+            var stBucket = _stArrayBucket;
+            if (stBucket == null)
+            {
+                stBucket = new byte[]?[_stArrayCount];
+                _stArrayBucket = stBucket;
+            }
+
+            ref var stArrayRef = ref stBucket[this._stIndex];
+            var stArray = stArrayRef;
+
+            // 如果线程本地存储的桶已被占用，则归还至共享桶
+            if (stArray != null)
+            {
+                this._arrayBucket.Return(stArray);
+            }
+
+            // 将当前数组存入线程本地存储的桶
+            stArrayRef = array;
         }
 
 

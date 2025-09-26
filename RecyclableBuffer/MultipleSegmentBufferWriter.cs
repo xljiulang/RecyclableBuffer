@@ -71,7 +71,7 @@ namespace RecyclableBuffer
         /// </summary>  
         public MultipleSegmentBufferWriter()
         {
-            this._pool = SharedByteArrayPool.Size12KB;
+            this._pool = SharedByteArrayPool.Size128KB;
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace RecyclableBuffer
         {
             private readonly int _arrayLength;
 
-            public static readonly SharedByteArrayPool Size12KB = new(128 * 1024);
+            public static readonly SharedByteArrayPool Size128KB = new(128 * 1024);
 
             public SharedByteArrayPool(int arrayLength)
             {

@@ -1,29 +1,32 @@
 ```
 
 BenchmarkDotNet v0.15.3, Windows 11 (10.0.26100.6584/24H2/2024Update/HudsonValley)
-Intel Core i7-8565U CPU 1.80GHz (Max: 1.99GHz) (Whiskey Lake), 1 CPU, 8 logical and 4 physical cores
+12th Gen Intel Core i5-12450H 2.00GHz, 1 CPU, 12 logical and 8 physical cores
 .NET SDK 10.0.100-rc.1.25451.107
   [Host]     : .NET 8.0.20 (8.0.20, 8.0.2025.41914), X64 RyuJIT x86-64-v3
   DefaultJob : .NET 8.0.20 (8.0.20, 8.0.2025.41914), X64 RyuJIT x86-64-v3
 
 
 ```
-| Method                           | BufferSize | Mean        | Error       | StdDev      | Median      | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
-|--------------------------------- |----------- |------------:|------------:|------------:|------------:|------:|--------:|-------:|----------:|------------:|
-| **SingleSegmentBufferWriter**        | **1024**       |    **154.7 ns** |     **5.71 ns** |    **16.83 ns** |    **151.7 ns** |  **1.11** |    **0.14** | **0.0191** |      **80 B** |        **0.43** |
-| MultipleSegmentBufferWriter      | 1024       |    140.6 ns |     3.87 ns |    10.92 ns |    137.7 ns |  1.01 |    0.11 | 0.0439 |     184 B |        1.00 |
-| Microsoft_RecyclableMemoryStream | 1024       |    317.8 ns |     5.25 ns |     4.65 ns |    317.7 ns |  2.27 |    0.17 | 0.0668 |     280 B |        1.52 |
-| DotNext_PoolingArrayBufferWriter | 1024       |    321.0 ns |     6.40 ns |     8.32 ns |    320.7 ns |  2.30 |    0.17 | 0.0439 |     184 B |        1.00 |
-| DotNext_SparseBufferWriter       | 1024       |    692.7 ns |    16.99 ns |    49.57 ns |    686.7 ns |  4.95 |    0.50 | 0.0534 |     224 B |        1.22 |
-|                                  |            |             |             |             |             |       |         |        |           |             |
-| **SingleSegmentBufferWriter**        | **8192**       |    **186.9 ns** |     **2.69 ns** |     **2.24 ns** |    **186.7 ns** |  **0.86** |    **0.05** | **0.0191** |      **80 B** |        **0.43** |
-| MultipleSegmentBufferWriter      | 8192       |    218.4 ns |     5.14 ns |    14.57 ns |    212.7 ns |  1.00 |    0.09 | 0.0439 |     184 B |        1.00 |
-| Microsoft_RecyclableMemoryStream | 8192       |    408.2 ns |     8.04 ns |    11.78 ns |    405.9 ns |  1.88 |    0.13 | 0.0668 |     280 B |        1.52 |
-| DotNext_PoolingArrayBufferWriter | 8192       |    693.2 ns |    13.31 ns |    12.45 ns |    691.9 ns |  3.19 |    0.20 | 0.0439 |     184 B |        1.00 |
-| DotNext_SparseBufferWriter       | 8192       |    959.1 ns |    14.02 ns |    13.77 ns |    956.8 ns |  4.41 |    0.28 | 0.0744 |     312 B |        1.70 |
-|                                  |            |             |             |             |             |       |         |        |           |             |
-| **SingleSegmentBufferWriter**        | **524288**     | **30,841.5 ns** |   **650.77 ns** | **1,918.81 ns** | **30,288.9 ns** |  **1.79** |    **0.13** | **0.0305** |     **160 B** |        **0.53** |
-| MultipleSegmentBufferWriter      | 524288     | 17,217.1 ns |   337.47 ns |   689.36 ns | 17,138.9 ns |  1.00 |    0.06 | 0.0610 |     304 B |        1.00 |
-| Microsoft_RecyclableMemoryStream | 524288     | 17,478.3 ns |   349.69 ns |   992.01 ns | 17,310.9 ns |  1.02 |    0.07 | 0.0916 |     480 B |        1.58 |
-| DotNext_PoolingArrayBufferWriter | 524288     | 33,636.5 ns |   662.30 ns | 1,106.55 ns | 33,515.2 ns |  1.96 |    0.10 |      - |     184 B |        0.61 |
-| DotNext_SparseBufferWriter       | 524288     | 48,342.4 ns | 1,074.89 ns | 3,049.30 ns | 47,667.0 ns |  2.81 |    0.21 | 2.6855 |   11400 B |       37.50 |
+| Method                              | BufferSize | Mean         | Error      | StdDev     | Median       | Ratio | RatioSD | Gen0   | Gen1   | Allocated | Alloc Ratio |
+|------------------------------------ |----------- |-------------:|-----------:|-----------:|-------------:|------:|--------:|-------:|-------:|----------:|------------:|
+| **SingleSegmentBufferWriter**           | **1024**       |     **59.07 ns** |   **1.036 ns** |   **0.969 ns** |     **58.87 ns** |  **0.73** |    **0.06** | **0.0126** |      **-** |      **80 B** |        **0.43** |
+| MultipleSegmentBufferWriter_Shared  | 1024       |     81.67 ns |   2.425 ns |   7.075 ns |     78.64 ns |  1.01 |    0.12 | 0.0293 |      - |     184 B |        1.00 |
+| MultipleSegmentBufferWriter_Default | 1024       |     69.48 ns |   1.283 ns |   1.002 ns |     69.67 ns |  0.86 |    0.07 | 0.0293 |      - |     184 B |        1.00 |
+| Microsoft_RecyclableMemoryStream    | 1024       |    213.55 ns |   9.218 ns |  26.150 ns |    201.53 ns |  2.63 |    0.38 | 0.0446 |      - |     280 B |        1.52 |
+| DotNext_PoolingArrayBufferWriter    | 1024       |    230.46 ns |   4.324 ns |   9.026 ns |    228.66 ns |  2.84 |    0.25 | 0.0293 |      - |     184 B |        1.00 |
+| DotNext_SparseBufferWriter          | 1024       |    430.72 ns |   4.963 ns |   4.144 ns |    431.88 ns |  5.31 |    0.42 | 0.0353 |      - |     224 B |        1.22 |
+|                                     |            |              |            |            |              |       |         |        |        |           |             |
+| **SingleSegmentBufferWriter**           | **8192**       |    **111.05 ns** |   **1.597 ns** |   **1.415 ns** |    **110.78 ns** |  **0.88** |    **0.01** | **0.0126** |      **-** |      **80 B** |        **0.43** |
+| MultipleSegmentBufferWriter_Shared  | 8192       |    125.69 ns |   0.675 ns |   0.564 ns |    125.66 ns |  1.00 |    0.01 | 0.0293 |      - |     184 B |        1.00 |
+| MultipleSegmentBufferWriter_Default | 8192       |    107.77 ns |   2.194 ns |   5.931 ns |    106.01 ns |  0.86 |    0.05 | 0.0293 |      - |     184 B |        1.00 |
+| Microsoft_RecyclableMemoryStream    | 8192       |    244.60 ns |   2.873 ns |   2.399 ns |    245.12 ns |  1.95 |    0.02 | 0.0443 |      - |     280 B |        1.52 |
+| DotNext_PoolingArrayBufferWriter    | 8192       |    374.89 ns |   7.210 ns |   9.375 ns |    371.22 ns |  2.98 |    0.07 | 0.0291 |      - |     184 B |        1.00 |
+| DotNext_SparseBufferWriter          | 8192       |    500.06 ns |   9.528 ns |  26.244 ns |    495.11 ns |  3.98 |    0.21 | 0.0496 |      - |     312 B |        1.70 |
+|                                     |            |              |            |            |              |       |         |        |        |           |             |
+| **SingleSegmentBufferWriter**           | **524288**     | **20,737.77 ns** | **350.927 ns** | **404.128 ns** | **20,603.31 ns** |  **1.99** |    **0.05** |      **-** |      **-** |     **160 B** |        **0.53** |
+| MultipleSegmentBufferWriter_Shared  | 524288     | 10,416.66 ns | 166.734 ns | 147.806 ns | 10,380.29 ns |  1.00 |    0.02 | 0.0458 |      - |     304 B |        1.00 |
+| MultipleSegmentBufferWriter_Default | 524288     |  9,559.85 ns |  83.089 ns |  69.383 ns |  9,563.54 ns |  0.92 |    0.01 | 0.0458 |      - |     304 B |        1.00 |
+| Microsoft_RecyclableMemoryStream    | 524288     |  9,770.75 ns |  67.812 ns |  56.626 ns |  9,765.34 ns |  0.94 |    0.01 | 0.0763 |      - |     480 B |        1.58 |
+| DotNext_PoolingArrayBufferWriter    | 524288     | 27,954.91 ns | 549.005 ns | 917.264 ns | 27,909.86 ns |  2.68 |    0.09 |      - |      - |     184 B |        0.61 |
+| DotNext_SparseBufferWriter          | 524288     | 29,241.77 ns | 245.071 ns | 229.240 ns | 29,280.36 ns |  2.81 |    0.04 | 1.8005 | 0.0305 |   11400 B |       37.50 |

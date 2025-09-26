@@ -68,6 +68,7 @@ namespace RecyclableBuffer
 
         /// <summary>
         /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="SharedByteArrayPool.Size128KB"/> 缓冲区池。
+        /// <para>此构造方式在高并发场景中表现更优</para>
         /// </summary> 
         public MultipleSegmentBufferWriter()
         {
@@ -76,6 +77,7 @@ namespace RecyclableBuffer
 
         /// <summary>
         /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的缓冲区池。
+        /// <para>此构造方式在低并发场景中表现更优</para>
         /// </summary>
         /// <param name="pool">用于租用缓冲区的 <see cref="ByteArrayPool"/> 实例。</param>
         /// <exception cref="ArgumentNullException">如果 <paramref name="pool"/> 为 null，则抛出异常。</exception>"

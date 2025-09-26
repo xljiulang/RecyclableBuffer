@@ -11,7 +11,6 @@ namespace RecyclableBuffer
     /// <para>维护一个固定缓冲区大小且可扩容的桶，承载所有小于等于此缓冲区大小的 Rent 和 Return 操作</para>
     /// <para>由 Shared 实例承载大于此缓冲区大小的 Rent 和 Return 操作</para>
     /// </summary>
-    [DebuggerDisplay("Capacity = {_arrayBucket.Capacity}")]
     public sealed class ByteArrayPool : ArrayPool<byte>
     {
         /// <summary>
@@ -161,7 +160,6 @@ namespace RecyclableBuffer
         /// <summary>
         /// 表示用于存储和复用字节数组的桶，支持线程安全的租用和归还操作。
         /// </summary>
-        [DebuggerDisplay("Capacity = {Capacity}")]
         private sealed class ByteArrayBucket
         {
             /// <summary>
@@ -182,12 +180,7 @@ namespace RecyclableBuffer
             /// <summary>
             /// 存储可复用的字节数组缓冲区。
             /// </summary>
-            private byte[]?[] _buffers;
-
-            /// <summary>
-            /// 获取当前桶的容量（缓冲区数组长度）。
-            /// </summary>
-            public int Capacity => this._buffers.Length;
+            private byte[]?[] _buffers; 
 
             /// <summary>
             /// 初始化 <see cref="ByteArrayBucket"/> 实例。

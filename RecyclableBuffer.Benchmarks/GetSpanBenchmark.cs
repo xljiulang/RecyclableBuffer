@@ -23,9 +23,16 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark(Baseline = true)]
-        public void MultipleSegmentBufferWriter()
+        public void MultipleSegmentBufferWriter_Shared()
         {
             using var target = new MultipleSegmentBufferWriter();
+            GetSpan(target);
+        }
+
+        [Benchmark]
+        public void MultipleSegmentBufferWriter_Default()
+        {
+            using var target = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
             GetSpan(target);
         }
 
@@ -50,7 +57,7 @@ namespace RecyclableBuffer.Benchmarks
             GetSpan(target);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]  
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void GetSpan(IBufferWriter<byte> bufferWriter)
         {
             bufferWriter.GetSpan(this.SizeHint);

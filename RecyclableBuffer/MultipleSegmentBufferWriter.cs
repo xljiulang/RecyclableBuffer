@@ -17,7 +17,7 @@ namespace RecyclableBuffer
         private long _length = 0;
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
-        private readonly ByteArrayPool _pool;
+        private readonly ArrayPool<byte> _pool;
 
         /// <summary>
         /// 当前写入器持有的所有租用缓冲区列表。
@@ -67,11 +67,11 @@ namespace RecyclableBuffer
         }
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="ByteArrayPool.Default"/> 缓冲区池。
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="SharedByteArrayPool.Size128KB"/> 缓冲区池。
         /// </summary> 
         public MultipleSegmentBufferWriter()
-            : this(ByteArrayPool.Default)
         {
+            this._pool = SharedByteArrayPool.Size128KB;
         }
 
         /// <summary>
@@ -207,6 +207,30 @@ namespace RecyclableBuffer
             this._length = 0;
 
             this._disposed = true;
+        }
+
+
+        private sealed class SharedByteArrayPool : ArrayPool<byte>
+        {
+            private const int MinArrayLength = 128 * 1024; // 128KB
+
+            /// <summary>
+            /// <para>每个 CPU 核心独享 128KB/块 * 32块 = 4MB 的可复用缓冲区</para>
+            /// <para>当缓冲区数量不够时，尝试向其它 CPU 核心租借缓冲区</para>
+            /// <para>当所有 CPU 核心的缓冲区都租借不到时，向 256KB 的缓冲区冲租借</para>
+            /// <para>当 256KB 的缓冲区借不到时，直接创建新的缓冲区</para>
+            /// </summary>
+            public static readonly SharedByteArrayPool Size128KB = new();
+
+            public override byte[] Rent(int minimumLength)
+            {
+                return Shared.Rent(Math.Max(minimumLength, MinArrayLength));
+            }
+
+            public override void Return(byte[] array, bool clearArray = false)
+            {
+                Shared.Return(array, clearArray);
+            }
         }
 
 

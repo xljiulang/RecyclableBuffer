@@ -42,11 +42,21 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark(Baseline = true)]
-        public void MultipleSegmentBufferWriter()
+        public void MultipleSegmentBufferWriter_Shared()
         {
             Parallel.For(0, COUNT, options, _ =>
             {
                 using var target = new MultipleSegmentBufferWriter();
+                WriteBuffer(target);
+            });
+        }
+
+        [Benchmark]
+        public void MultipleSegmentBufferWriter_Default()
+        {
+            Parallel.For(0, COUNT, options, _ =>
+            {
+                using var target = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 WriteBuffer(target);
             });
         }

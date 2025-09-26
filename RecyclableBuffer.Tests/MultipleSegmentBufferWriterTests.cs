@@ -9,7 +9,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Constructor_InitializesWithDefaultPool()
         {
-            using var writer = new MultipleSegmentBufferWriter();
+            using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
             Assert.Equal(0, writer.WrittenSequence.Length);
         }
 
@@ -22,7 +22,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Advance_ThrowsInvalidOperationException_IfNoBuffer()
         {
-            using var writer = new MultipleSegmentBufferWriter();
+            using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
             Assert.Throws<InvalidOperationException>(() => writer.Advance(1));
         }
 
@@ -31,7 +31,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 var span = writer.GetSpan(4);
                 span[0] = 1;
                 span[1] = 2;
@@ -49,7 +49,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 var mem = writer.GetMemory(8);
                 Assert.True(mem.Length >= 8);
             }
@@ -60,7 +60,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 writer.GetMemory(4);
                 writer.Advance(4);
 
@@ -74,7 +74,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 var span = writer.GetSpan(8);
                 Assert.True(span.Length >= 8);
             }
@@ -85,7 +85,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 writer.GetSpan(4);
                 writer.Advance(4);
 
@@ -103,7 +103,7 @@ namespace RecyclableBuffer.Tests
             {                
                 Random.Shared.NextBytes(bytes);
 
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 writer.Write(bytes);
                 Assert.Equal(bytes, writer.WrittenSequence.ToArray());
             }
@@ -117,7 +117,7 @@ namespace RecyclableBuffer.Tests
             {              
                 Random.Shared.NextBytes(bytes);
 
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 writer.AsWritableStream().Write(bytes);
 
                 var memoryStream = new MemoryStream();
@@ -138,7 +138,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter();
+                using var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
                 var span1 = writer.GetSpan(4);
                 span1[0] = 10;
                 span1[1] = 20;
@@ -162,7 +162,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Advance_ThrowsInvalidOperationException_AfterDispose()
         {
-            var writer = new MultipleSegmentBufferWriter();
+            var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
             writer.Dispose();
             Assert.Throws<InvalidOperationException>(() => writer.Advance(1));
         }
@@ -170,7 +170,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void GetMemory_ThrowsObjectDisposedException_AfterDispose()
         {
-            var writer = new MultipleSegmentBufferWriter();
+            var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
             writer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => writer.GetMemory(1));
         }
@@ -178,7 +178,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void GetSpan_ThrowsObjectDisposedException_AfterDispose()
         {
-            var writer = new MultipleSegmentBufferWriter();
+            var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
             writer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => writer.GetSpan(1));
         }
@@ -186,7 +186,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Dispose_CanBeCalledMultipleTimes()
         {
-            var writer = new MultipleSegmentBufferWriter();
+            var writer = new MultipleSegmentBufferWriter(ByteArrayPool.Default);
             writer.Dispose();
             writer.Dispose(); // Should not throw
         }

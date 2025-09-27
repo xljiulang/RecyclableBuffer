@@ -11,7 +11,10 @@ namespace RecyclableBuffer.Benchmarks
     {
         const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
-        private static readonly ByteArrayBucket fixedSizeByteArrayBucket = ByteArrayBucket.CreateFixedSize(ARRAY_LENGTH, 32);
+        private static readonly ByteArrayBucket spinLockFixedSizeByteArrayBucket = new SpinLockFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
+        private static readonly ByteArrayBucket spinLockScalableByteArrayBucket = new SpinLockScalableByteArrayBucket(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket stackFixedSizeByteArrayBucket = new StackFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
+        private static readonly ByteArrayBucket stackScalableByteArrayBucket = new StackScalableByteArrayBucket(ARRAY_LENGTH);
         private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
 
         [Params(1024, 8 * 1024, 512 * 1024)]
@@ -47,16 +50,30 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark]
-        public void MultipleSegmentBufferWriter_Scalable()
+        public void MultipleSegmentBufferWriter_Scalable_SpinLock()
         {
-            using var target = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            using var target = new MultipleSegmentBufferWriter(spinLockScalableByteArrayBucket);
             WriteBuffer(target);
         }
 
         [Benchmark]
-        public void MultipleSegmentBufferWriter_FixedSize()
+        public void MultipleSegmentBufferWriter_FixedSize_SpinLock()
         {
-            using var target = new MultipleSegmentBufferWriter(fixedSizeByteArrayBucket);
+            using var target = new MultipleSegmentBufferWriter(spinLockFixedSizeByteArrayBucket);
+            WriteBuffer(target);
+        }
+
+        [Benchmark]
+        public void MultipleSegmentBufferWriter_Scalable_Stack()
+        {
+            using var target = new MultipleSegmentBufferWriter(stackScalableByteArrayBucket);
+            WriteBuffer(target);
+        }
+
+        [Benchmark]
+        public void MultipleSegmentBufferWriter_FixedSize_Stack()
+        {
+            using var target = new MultipleSegmentBufferWriter(stackFixedSizeByteArrayBucket);
             WriteBuffer(target);
         }
 

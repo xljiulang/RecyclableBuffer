@@ -3,6 +3,7 @@ using DotNext.Buffers;
 using Microsoft.IO;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 
@@ -15,8 +16,9 @@ namespace RecyclableBuffer.Benchmarks
         const int COUNT = 1_0000;
         const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
-        private static readonly ByteArrayBucket spinLockFixedSizeByteArrayBucket = ByteArrayBucket.CreateFixedSize(ARRAY_LENGTH, 32);
-        private static readonly ByteArrayBucket spinLockStackFixedSizeByteArrayBucket = new StackFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
+        private static readonly ByteArrayBucket spinLockFixedSizeByteArrayBucket = new SpinLockFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
+        private static readonly ByteArrayBucket spinLockScalableByteArrayBucket = new SpinLockScalableByteArrayBucket(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket stackFixedSizeByteArrayBucket = new StackFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
         private static readonly ByteArrayBucket stackScalableByteArrayBucket = new StackScalableByteArrayBucket(ARRAY_LENGTH);
         private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
         private static readonly ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 };
@@ -74,7 +76,7 @@ namespace RecyclableBuffer.Benchmarks
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var target = new MultipleSegmentBufferWriter(spinLockScalableByteArrayBucket);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.WrittenSequence, ct);
@@ -110,7 +112,7 @@ namespace RecyclableBuffer.Benchmarks
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(spinLockStackFixedSizeByteArrayBucket);
+                using var target = new MultipleSegmentBufferWriter(stackFixedSizeByteArrayBucket);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.WrittenSequence, ct);
@@ -172,67 +174,6 @@ namespace RecyclableBuffer.Benchmarks
             foreach (var memory in sequence)
             {
                 await socket.SendToAsync(memory, remoteEndPoint, cancellationToken);
-            }
-        }
-
-        private sealed class StackFixedSizeByteArrayBucket : ByteArrayBucket
-        {
-            private int _count;
-            private readonly int _arrayCount;
-            private readonly ConcurrentStack<byte[]> _buckets = [];
-
-            public StackFixedSizeByteArrayBucket(int arrayLength, int arrayCount)
-                : base(arrayLength)
-            {
-                this._arrayCount = arrayCount;
-            }
-
-            public override byte[] Rent()
-            {
-                if (_buckets.TryPop(out var array))
-                {
-                    Interlocked.Decrement(ref _count);
-                    return array;
-                }
-
-                return new byte[ArrayLength];
-            }
-
-            public override void Return(byte[] array)
-            {
-                if (Interlocked.Increment(ref _count) <= _arrayCount)
-                {
-                    _buckets.Push(array);
-                }
-                else
-                {
-                    Interlocked.Decrement(ref _count);
-                }
-            }
-        }
-
-        private sealed class StackScalableByteArrayBucket : ByteArrayBucket
-        {
-            private readonly ConcurrentStack<byte[]> _buckets = [];
-
-            public StackScalableByteArrayBucket(int arrayLength)
-                : base(arrayLength)
-            {
-            }
-
-            public override byte[] Rent()
-            {
-                if (_buckets.TryPop(out var array))
-                {
-                    return array;
-                }
-
-                return new byte[ArrayLength];
-            }
-
-            public override void Return(byte[] array)
-            {
-                _buckets.Push(array);
             }
         }
     }

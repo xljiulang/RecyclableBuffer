@@ -1,3 +1,4 @@
+using RecyclableBuffer.Buckets;
 using System.Buffers;
 
 namespace RecyclableBuffer.Tests
@@ -5,19 +6,20 @@ namespace RecyclableBuffer.Tests
     public class MultipleSegmentBufferWriterTests
     {
         private const int COUNT = 10;
+        private static readonly ByteArrayBucket byteArrayBucket = new ScalableSpinLockByteArrayBucket(128 * 1024);
 
         [Fact]
         public void Constructor_InitializesWithDefaultPool()
         {
-            using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
             Assert.Equal(0, writer.WrittenSequence.Length);
         }
-         
+
 
         [Fact]
         public void Advance_ThrowsInvalidOperationException_IfNoBuffer()
         {
-            using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
             Assert.Throws<InvalidOperationException>(() => writer.Advance(1));
         }
 
@@ -26,7 +28,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 var span = writer.GetSpan(4);
                 span[0] = 1;
                 span[1] = 2;
@@ -44,7 +46,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 var mem = writer.GetMemory(8);
                 Assert.True(mem.Length >= 8);
             }
@@ -55,7 +57,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 writer.GetMemory(4);
                 writer.Advance(4);
 
@@ -69,7 +71,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 var span = writer.GetSpan(8);
                 Assert.True(span.Length >= 8);
             }
@@ -80,7 +82,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 writer.GetSpan(4);
                 writer.Advance(4);
 
@@ -98,7 +100,7 @@ namespace RecyclableBuffer.Tests
             {
                 Random.Shared.NextBytes(bytes);
 
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 writer.Write(bytes);
                 Assert.Equal(bytes, writer.WrittenSequence.ToArray());
             }
@@ -112,7 +114,7 @@ namespace RecyclableBuffer.Tests
             {
                 Random.Shared.NextBytes(bytes);
 
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 writer.AsWritableStream().Write(bytes);
 
                 var memoryStream = new MemoryStream();
@@ -133,7 +135,7 @@ namespace RecyclableBuffer.Tests
         {
             for (var i = 0; i < COUNT; i++)
             {
-                using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+                using var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
                 var span1 = writer.GetSpan(4);
                 span1[0] = 10;
                 span1[1] = 20;
@@ -157,7 +159,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Advance_ThrowsInvalidOperationException_AfterDispose()
         {
-            var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
             writer.Dispose();
             Assert.Throws<InvalidOperationException>(() => writer.Advance(1));
         }
@@ -165,7 +167,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void GetMemory_ThrowsObjectDisposedException_AfterDispose()
         {
-            var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
             writer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => writer.GetMemory(1));
         }
@@ -173,7 +175,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void GetSpan_ThrowsObjectDisposedException_AfterDispose()
         {
-            var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
             writer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => writer.GetSpan(1));
         }
@@ -181,7 +183,7 @@ namespace RecyclableBuffer.Tests
         [Fact]
         public void Dispose_CanBeCalledMultipleTimes()
         {
-            var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
+            var writer = new MultipleSegmentBufferWriter(byteArrayBucket);
             writer.Dispose();
             writer.Dispose(); // Should not throw
         }

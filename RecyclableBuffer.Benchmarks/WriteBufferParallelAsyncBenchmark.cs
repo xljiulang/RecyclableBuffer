@@ -1,9 +1,8 @@
 ﻿using BenchmarkDotNet.Attributes;
 using DotNext.Buffers;
 using Microsoft.IO;
+using RecyclableBuffer.Buckets;
 using System.Buffers;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 
@@ -16,10 +15,10 @@ namespace RecyclableBuffer.Benchmarks
         const int COUNT = 1_0000;
         const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
-        private static readonly ByteArrayBucket spinLockFixedSizeByteArrayBucket = new SpinLockFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
-        private static readonly ByteArrayBucket spinLockScalableByteArrayBucket = new SpinLockScalableByteArrayBucket(ARRAY_LENGTH);
-        private static readonly ByteArrayBucket stackFixedSizeByteArrayBucket = new StackFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
-        private static readonly ByteArrayBucket stackScalableByteArrayBucket = new StackScalableByteArrayBucket(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket fixedSizeSpinLock = new FixedSizeSpinLockByteArrayBucket(ARRAY_LENGTH, 32);
+        private static readonly ByteArrayBucket fixedSizeStack = new FixedSizeStackByteArrayBucket(ARRAY_LENGTH, 32);
+        private static readonly ByteArrayBucket scalableSpinLock = new ScalableSpinLockByteArrayBucket(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket scalableStack = new ScalableStackByteArrayBucket(ARRAY_LENGTH);
         private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
         private static readonly ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 };
         private static readonly IPEndPoint remoteEndPoint = new(IPAddress.Loopback, 443);
@@ -76,7 +75,7 @@ namespace RecyclableBuffer.Benchmarks
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(spinLockScalableByteArrayBucket);
+                using var target = new MultipleSegmentBufferWriter(scalableSpinLock);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.WrittenSequence, ct);
@@ -88,7 +87,7 @@ namespace RecyclableBuffer.Benchmarks
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(stackScalableByteArrayBucket);
+                using var target = new MultipleSegmentBufferWriter(scalableStack);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.WrittenSequence, ct);
@@ -100,7 +99,7 @@ namespace RecyclableBuffer.Benchmarks
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(spinLockFixedSizeByteArrayBucket);
+                using var target = new MultipleSegmentBufferWriter(fixedSizeSpinLock);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.WrittenSequence, ct);
@@ -112,7 +111,7 @@ namespace RecyclableBuffer.Benchmarks
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(stackFixedSizeByteArrayBucket);
+                using var target = new MultipleSegmentBufferWriter(fixedSizeStack);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.WrittenSequence, ct);

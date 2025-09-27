@@ -12,8 +12,7 @@ namespace RecyclableBuffer.Benchmarks
             benchmark.MultipleSegmentBufferWriter_Shared();
             benchmark.MultipleSegmentBufferWriter_Shared();
 #endif
-            BenchmarkRunner.Run<WriteBufferParallelAsyncBenchmark>();
-            BenchmarkRunner.Run<WriteBufferBenchmark>();
+            BenchmarkRunner.Run(typeof(Program).Assembly);
         }
     }
 }

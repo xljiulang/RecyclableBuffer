@@ -154,7 +154,7 @@ namespace RecyclableBuffer.Benchmarks
             });
         }
 
-        private static async ValueTask SendToAsync(ReadOnlySequence<byte> sequence, CancellationToken cancellationToken)
+        protected virtual async ValueTask SendToAsync(ReadOnlySequence<byte> sequence, CancellationToken cancellationToken)
         {
             const int CHUNK_SIZE = 8 * 1024;
             using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);

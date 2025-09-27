@@ -9,19 +9,9 @@ namespace RecyclableBuffer
     sealed class ByteArrayPool : ArrayPool<byte>
     {
         /// <summary>
-        /// 获取静态线程本地存储的桶索引。
+        /// 静态线程本地存储的桶数组长度。
         /// </summary>
-        private readonly int _tsIndex;
-
-        /// <summary>
-        /// 每个缓冲区的字节大小。
-        /// </summary>
-        private readonly int _arrayLength;
-
-        /// <summary>
-        /// 用于存储可复用缓冲区的并发队列。
-        /// </summary>
-        private readonly ByteArrayBucket _arrayBucket;
+        private const int TS_ARRAY_COUNT = 28;
 
         /// <summary>
         /// 静态线程本地存储的缓冲区桶，用于减少锁竞争。
@@ -30,9 +20,9 @@ namespace RecyclableBuffer
         private static byte[]?[]? _tsArrayBucket;
 
         /// <summary>
-        /// 静态线程本地存储的桶数组长度。
+        /// 用于存储可复用缓冲区的并发队列。
         /// </summary>
-        private const int TS_ARRAY_COUNT = 28;
+        private readonly ByteArrayBucket _arrayBucket;
 
         /// <summary>
         /// 初始化 <see cref="ByteArrayPool"/> 实例。
@@ -40,8 +30,6 @@ namespace RecyclableBuffer
         /// <param name="arrayBucket">用于存储和复用字节数组的桶。</param>
         public ByteArrayPool(ByteArrayBucket arrayBucket)
         {
-            this._tsIndex = arrayBucket.GetBucketIndex();
-            this._arrayLength = arrayBucket.ArrayLength;
             this._arrayBucket = arrayBucket;
         }
 
@@ -53,9 +41,9 @@ namespace RecyclableBuffer
         public override byte[] Rent(int minimumLength)
         {
             // minimumLength 对应 IBufferWriter.GetMemory 和 GetSpan 传入的 sizeHint
-            // 正常情况下 sizeHint 都是 0 或者一个很小的值，只要小于 _arrayLength 直接从 _arrayBucket 租用
-            // 但不排除用户传入了大于 _arrayLength 的 sizeHint，这种意外情况直接从 Shared 池中租用
-            if (minimumLength > this._arrayLength)
+            // 正常情况下 sizeHint 都是 0 或者一个很小的值，只要小于等于 ArrayLength 直接从 _arrayBucket 租用
+            // 但不排除用户传入了大于 ArrayLength 的 sizeHint，这种意外情况直接从 Shared 池中租用
+            if (minimumLength > this._arrayBucket.ArrayLength)
             {
                 return Shared.Rent(minimumLength);
             }
@@ -64,7 +52,7 @@ namespace RecyclableBuffer
             var tsBucket = _tsArrayBucket;
             if (tsBucket != null)
             {
-                ref var tsArrayRef = ref tsBucket[this._tsIndex];
+                ref var tsArrayRef = ref tsBucket[this._arrayBucket.BucketIndex];
                 var tsArray = tsArrayRef;
                 if (tsArray != null)
                 {
@@ -83,12 +71,13 @@ namespace RecyclableBuffer
         /// <param name="clearArray">是否清空数组内容。</param>
         public override void Return(byte[] array, bool clearArray = false)
         {
-            if (array.Length < this._arrayLength)
+            var arrayLength = this._arrayBucket.ArrayLength;
+            if (array.Length < arrayLength)
             {
                 return;
             }
 
-            if (array.Length > this._arrayLength)
+            if (array.Length > arrayLength)
             {
                 Shared.Return(array, clearArray);
                 return;
@@ -107,7 +96,7 @@ namespace RecyclableBuffer
                 _tsArrayBucket = tsBucket;
             }
 
-            ref var tsArrayRef = ref tsBucket[this._tsIndex];
+            ref var tsArrayRef = ref tsBucket[this._arrayBucket.BucketIndex];
             var tsArray = tsArrayRef;
 
             // 如果线程本地存储的桶已被占用，则归还至共享桶

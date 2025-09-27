@@ -7,7 +7,9 @@ using System.Threading;
 namespace RecyclableBuffer
 {
     /// <summary>
-    /// 表示用于存储和复用字节数组的桶，支持线程安全的租用和归还操作。
+    /// 表示用于存储和复用字节数组的桶。
+    /// <para>支持线程安全的租用和归还操作</para>
+    /// <para>创建后的实例需要缓存使用直到进程结束</para>
     /// </summary>
     public abstract class ByteArrayBucket
     {
@@ -19,14 +21,22 @@ namespace RecyclableBuffer
         /// <summary>
         /// 获取桶中每个字节数组的长度（字节）。
         /// </summary>
-        public abstract int ArrayLength { get; }
+        public int ArrayLength { get; }
 
         /// <summary>
-        /// 获取当前数组长度对应的桶索引。
+        /// 获取当前数组长度对应的桶索引
         /// </summary>
-        public int GetBucketIndex()
+        public int BucketIndex { get; }
+
+        /// <summary>
+        /// 用于存储和复用字节数组的桶
+        /// </summary>
+        /// <param name="arrayLength">桶中每个字节数组的长度（字节）</param>
+        public ByteArrayBucket(int arrayLength)
         {
-            return SelectBucketIndex(this.ArrayLength);
+            var index = SelectBucketIndex(arrayLength);
+            this.ArrayLength = 16 << index;
+            this.BucketIndex = index;
         }
 
         /// <summary>
@@ -40,18 +50,6 @@ namespace RecyclableBuffer
         /// </summary>
         /// <param name="array">要归还的字节数组。</param>
         public abstract void Return(byte[] array);
-
-        /// <summary>
-        /// 获取指定数组长度对应的最大数组长度。
-        /// </summary>
-        /// <param name="arrayLength"></param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected internal static int GetMaxArrayLength(int arrayLength)
-        {
-            var index = SelectBucketIndex(arrayLength);
-            return 16 << index;
-        }
 
         /// <summary>
         /// 选择适当的桶索引以容纳指定大小的缓冲区。
@@ -115,21 +113,15 @@ namespace RecyclableBuffer
             /// </summary>
             private readonly byte[]?[] _buffers;
 
-
-            private readonly int _arrayLength;
-
-            /// <inheritdoc/>
-            public override int ArrayLength => this._arrayLength;
-
             /// <summary>
             /// 初始化 <see cref="ScalableByteArrayBucket"/> 实例。
             /// </summary>
             /// <param name="arrayLength">每个数组的长度。</param>
             /// <param name="arrayCount">数组数量。</param>
             public FixedSizeByteArrayBucket(int arrayLength, int arrayCount)
+                : base(arrayLength)
             {
                 this._buffers = new byte[arrayCount][];
-                this._arrayLength = GetMaxArrayLength(arrayLength);
             }
 
             /// <summary>
@@ -160,7 +152,7 @@ namespace RecyclableBuffer
                     }
                 }
 
-                return array ?? new byte[this._arrayLength];
+                return array ?? new byte[this.ArrayLength];
             }
 
             /// <summary>
@@ -209,18 +201,13 @@ namespace RecyclableBuffer
             /// </summary>
             private byte[]?[] _buffers = new byte[Environment.ProcessorCount][];
 
-            private readonly int _arrayLength;
-
-            /// <inheritdoc/>
-            public override int ArrayLength => this._arrayLength;
-
             /// <summary>
             /// 初始化 <see cref="ScalableByteArrayBucket"/> 实例。
             /// </summary>
             /// <param name="arrayLength">每个数组的长度。</param>
             public ScalableByteArrayBucket(int arrayLength)
+                : base(arrayLength)
             {
-                this._arrayLength = GetMaxArrayLength(arrayLength);
             }
 
             /// <summary>
@@ -253,7 +240,7 @@ namespace RecyclableBuffer
                     }
                 }
 
-                return array ?? new byte[this._arrayLength];
+                return array ?? new byte[this.ArrayLength];
             }
 
             /// <summary>

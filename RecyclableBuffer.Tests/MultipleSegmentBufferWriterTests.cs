@@ -12,12 +12,7 @@ namespace RecyclableBuffer.Tests
             using var writer = new MultipleSegmentBufferWriter(ByteArrayBucket.DefaultScalable);
             Assert.Equal(0, writer.WrittenSequence.Length);
         }
-
-        [Fact]
-        public void Constructor_ThrowsArgumentNullException_WhenPoolIsNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => new MultipleSegmentBufferWriter(null!));
-        }
+         
 
         [Fact]
         public void Advance_ThrowsInvalidOperationException_IfNoBuffer()

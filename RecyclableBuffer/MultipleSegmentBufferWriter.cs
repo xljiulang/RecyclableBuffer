@@ -17,7 +17,8 @@ namespace RecyclableBuffer
         private long _length = 0;
         private bool _disposed = false;
         private RentedBuffer? _lastBuffer;
-        private readonly ArrayPool<byte> _pool;
+        private readonly int _arrayLength;
+        private readonly ArrayPool<byte> _arrayPool;
 
         /// <summary>
         /// 当前写入器持有的所有租用缓冲区列表。
@@ -67,37 +68,42 @@ namespace RecyclableBuffer
         }
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="SharedByteArrayPool"/> 缓冲区池。
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="ArrayPool{Byte}.Shared"/> 缓冲区池。
         /// </summary>  
         public MultipleSegmentBufferWriter()
+            : this(128 * 1024, ArrayPool<byte>.Shared)
         {
-            this._pool = SharedByteArrayPool.Size128KB;
         }
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="SharedByteArrayPool"/> 缓冲区池。
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="ArrayPool{Byte}.Shared"/> 缓冲区池。
         /// </summary> 
         /// <param name="arrayLength">每个缓冲区的字节数组长度</param>
         public MultipleSegmentBufferWriter(int arrayLength)
+            : this(arrayLength, ArrayPool<byte>.Shared)
         {
-            this._pool = new SharedByteArrayPool(arrayLength);
         }
 
         /// <summary>
         /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的 <see cref="ByteArrayBucket"/> 缓冲区桶。
         /// </summary>
         /// <param name="arrayBucket">用于存储和复用字节数组的桶，不能为空。</param>
-        /// <exception cref="ArgumentNullException">当 <paramref name="arrayBucket"/> 为 <c>null</c> 时抛出。</exception>
         public MultipleSegmentBufferWriter(ByteArrayBucket arrayBucket)
+            : this(arrayBucket.ArrayLength, new ByteArrayPool(arrayBucket))
         {
-            if (arrayBucket == null)
-            {
-                throw new ArgumentNullException(nameof(arrayBucket));
-            }
-
-            this._pool = new ByteArrayPool(arrayBucket);
         }
 
+        /// <summary>
+        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的缓冲区长度和数组池。
+        /// </summary>
+        /// <param name="arrayLength">每个缓冲区的字节数组长度。</param>
+        /// <param name="arrayPool">用于租用和归还缓冲区的数组池。</param>
+        /// <exception cref="ArgumentNullException">当 <paramref name="arrayPool"/> 为 <c>null</c> 时抛出。</exception>
+        public MultipleSegmentBufferWriter(int arrayLength, ArrayPool<byte> arrayPool)
+        {
+            this._arrayLength = arrayLength;
+            this._arrayPool = arrayPool ?? throw new ArgumentNullException(nameof(arrayPool));
+        }
 
         /// <inheritdoc/>
         /// <exception cref="InvalidOperationException">如果没有可用缓冲区则抛出异常。</exception>
@@ -172,7 +178,8 @@ namespace RecyclableBuffer
         {
             this.ThrowIfDisposed();
 
-            var buffer = new RentedBuffer(_pool, sizeHint);
+            var arrayLength = Math.Max(this._arrayLength, sizeHint);
+            var buffer = new RentedBuffer(_arrayPool, arrayLength);
             this._buffers.Add(buffer);
             return buffer;
         }
@@ -221,29 +228,6 @@ namespace RecyclableBuffer
             this._length = 0;
 
             this._disposed = true;
-        }
-
-
-        private sealed class SharedByteArrayPool : ArrayPool<byte>
-        {
-            private readonly int _arrayLength;
-
-            public static readonly SharedByteArrayPool Size128KB = new(128 * 1024);
-
-            public SharedByteArrayPool(int arrayLength)
-            {
-                this._arrayLength = ByteArrayBucket.GetMaxArrayLength(arrayLength);
-            }
-
-            public override byte[] Rent(int minimumLength)
-            {
-                return Shared.Rent(Math.Max(minimumLength, _arrayLength));
-            }
-
-            public override void Return(byte[] array, bool clearArray = false)
-            {
-                Shared.Return(array, clearArray);
-            }
         }
 
 

@@ -15,7 +15,7 @@ namespace RecyclableBuffer
     {
         private bool _disposed = false;
         private RentedBuffer _buffer;
-        private readonly ArrayPool<byte> _pool;
+        private readonly ArrayPool<byte> _arrayPool;
 
         /// <inheritdoc/>
         /// <exception cref="ObjectDisposedException">对象已释放时抛出。</exception>
@@ -78,12 +78,12 @@ namespace RecyclableBuffer
         /// 使用指定的缓冲区池和初始容量初始化 <see cref="SingleSegmentBufferWriter"/> 实例。
         /// </summary>
         /// <param name="minimumLength">缓冲区的最小容量（字节）。</param>
-        /// <param name="pool">用于租用缓冲区的池。</param>
+        /// <param name="arrayPool">用于租用缓冲区的池。</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public SingleSegmentBufferWriter(int minimumLength, ArrayPool<byte> pool)
+        public SingleSegmentBufferWriter(int minimumLength, ArrayPool<byte> arrayPool)
         {
-            _pool = pool ?? throw new ArgumentNullException(nameof(pool));
-            _buffer = new RentedBuffer(pool, minimumLength);
+            _arrayPool = arrayPool ?? throw new ArgumentNullException(nameof(arrayPool));
+            _buffer = new RentedBuffer(arrayPool, minimumLength);
         }
 
         /// <inheritdoc/>
@@ -141,7 +141,7 @@ namespace RecyclableBuffer
             }
 
             var minimumLength = sizeHint + _buffer.Capacity + 1;
-            var nextBuffer = new RentedBuffer(_pool, minimumLength);
+            var nextBuffer = new RentedBuffer(_arrayPool, minimumLength);
 
             var source = _buffer.WritternSpan;
             if (source.Length > 0)

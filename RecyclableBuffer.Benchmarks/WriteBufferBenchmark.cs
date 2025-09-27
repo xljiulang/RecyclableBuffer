@@ -12,6 +12,7 @@ namespace RecyclableBuffer.Benchmarks
         const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
         private static readonly ByteArrayBucket fixedSizeByteArrayBucket = ByteArrayBucket.CreateFixedSize(ARRAY_LENGTH, 32);
+        private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
 
         [Params(1024, 8 * 1024, 512 * 1024)]
         public int BufferSize = 1024 * 1024;
@@ -35,6 +36,13 @@ namespace RecyclableBuffer.Benchmarks
         public void MultipleSegmentBufferWriter_Shared()
         {
             using var target = new MultipleSegmentBufferWriter();
+            WriteBuffer(target);
+        }
+
+        [Benchmark]
+        public void MultipleSegmentBufferWriter_Configurable()
+        {
+            using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH, configurableArrayPool);
             WriteBuffer(target);
         }
 

@@ -19,7 +19,7 @@ namespace RecyclableBuffer.Benchmarks
         private static readonly ByteArrayBucket spinLockStackFixedSizeByteArrayBucket = new StackFixedSizeByteArrayBucket(ARRAY_LENGTH, 32);
         private static readonly ByteArrayBucket stackScalableByteArrayBucket = new StackScalableByteArrayBucket(ARRAY_LENGTH);
         private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
-        private static readonly ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 };
+        private static readonly ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 };
         private static readonly IPEndPoint remoteEndPoint = new(IPAddress.Loopback, 443);
 
         [Params(1024, 8 * 1024, 512 * 1024)]

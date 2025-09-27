@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace RecyclableBuffer
@@ -19,14 +18,14 @@ namespace RecyclableBuffer
         public static readonly ByteArrayBucket DefaultScalable = new ScalableByteArrayBucket(128 * 1024);
 
         /// <summary>
-        /// 获取桶中每个字节数组的长度（字节）。
-        /// </summary>
-        public int ArrayLength { get; }
-
-        /// <summary>
         /// 获取当前数组长度对应的桶索引
         /// </summary>
         public int BucketIndex { get; }
+
+        /// <summary>
+        /// 获取桶中每个字节数组的长度（字节）。
+        /// </summary>
+        public int ArrayLength { get; }
 
         /// <summary>
         /// 用于存储和复用字节数组的桶
@@ -35,28 +34,16 @@ namespace RecyclableBuffer
         public ByteArrayBucket(int arrayLength)
         {
             var index = SelectBucketIndex(arrayLength);
-            this.ArrayLength = 16 << index;
+
             this.BucketIndex = index;
+            this.ArrayLength = GetMaxSizeForBucket(index);
         }
-
-        /// <summary>
-        /// 租借一个字节数组。
-        /// </summary>
-        /// <returns>租借到的字节数组。</returns>
-        public abstract byte[] Rent();
-
-        /// <summary>
-        /// 归还一个字节数组以供复用。
-        /// </summary>
-        /// <param name="array">要归还的字节数组。</param>
-        public abstract void Return(byte[] array);
 
         /// <summary>
         /// 选择适当的桶索引以容纳指定大小的缓冲区。
         /// </summary>
         /// <param name="arrayLength"></param>
         /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SelectBucketIndex(int arrayLength)
         {
             return Log2((uint)((arrayLength - 1) | 0xF)) - 3;
@@ -70,6 +57,11 @@ namespace RecyclableBuffer
                 }
                 return log;
             }
+        }
+
+        private static int GetMaxSizeForBucket(int bucketIndex)
+        {
+            return 16 << bucketIndex;
         }
 
         /// <summary>
@@ -92,6 +84,19 @@ namespace RecyclableBuffer
         {
             return new FixedSizeByteArrayBucket(arrayLength, arrayCount);
         }
+
+        /// <summary>
+        /// 租借一个字节数组。
+        /// </summary>
+        /// <returns>租借到的字节数组。</returns>
+        public abstract byte[] Rent();
+
+        /// <summary>
+        /// 归还一个字节数组以供复用。
+        /// </summary>
+        /// <param name="array">要归还的字节数组。</param>
+        public abstract void Return(byte[] array);
+
 
         /// <summary>
         /// 固定大小字节数组桶，使用指定最大数组数量的 <see cref="ArrayPool{T}"/> 实现。
@@ -137,11 +142,12 @@ namespace RecyclableBuffer
                 {
                     this._lock.Enter(ref lockTaken);
 
-                    var capacity = this._buffers.Length;
-                    if (this._index < capacity)
+                    if (this._index < this._buffers.Length)
                     {
-                        array = this._buffers[this._index];
-                        this._buffers[_index++] = null;
+                        ref var arrayRef = ref this._buffers[this._index];
+                        array = arrayRef;
+                        arrayRef = null;
+                        this._index += 1;
                     }
                 }
                 finally
@@ -167,7 +173,7 @@ namespace RecyclableBuffer
                     this._lock.Enter(ref lockTaken);
                     if (this._index != 0)
                     {
-                        this._index--;
+                        this._index -= 1;
                         this._buffers[this._index] = array;
                     }
                 }
@@ -229,8 +235,10 @@ namespace RecyclableBuffer
                         Array.Resize(ref this._buffers, capacity * 2);
                     }
 
-                    array = this._buffers[this._index];
-                    this._buffers[_index++] = null;
+                    ref var arrayRef = ref this._buffers[this._index];
+                    array = arrayRef;
+                    arrayRef = null;
+                    this._index += 1;
                 }
                 finally
                 {
@@ -255,7 +263,7 @@ namespace RecyclableBuffer
                     this._lock.Enter(ref lockTaken);
                     if (this._index != 0)
                     {
-                        this._index--;
+                        this._index -= 1;
                         this._buffers[this._index] = array;
                     }
                 }

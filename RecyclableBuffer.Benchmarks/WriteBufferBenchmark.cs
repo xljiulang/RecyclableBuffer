@@ -35,7 +35,7 @@ namespace RecyclableBuffer.Benchmarks
         [Benchmark(Baseline = true)]
         public void MultipleSegmentBufferWriter_Shared()
         {
-            using var target = new MultipleSegmentBufferWriter();
+            using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH);
             WriteBuffer(target);
         }
 
@@ -77,7 +77,7 @@ namespace RecyclableBuffer.Benchmarks
         [Benchmark]
         public void DotNext_SparseBufferWriter()
         {
-            using var target = new SparseBufferWriter<byte>();
+            using var target = new SparseBufferWriter<byte>(ARRAY_LENGTH);
             WriteBuffer(target);
         }
 

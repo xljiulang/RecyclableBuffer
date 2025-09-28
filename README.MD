@@ -5,7 +5,7 @@
 [RecyclableBuffer](https://www.nuget.org/packages/RecyclableBuffer/)
 
 ### Benchmark
-大部分情况下 RecyclableBuffer 的 [Benchmark 成绩](https://github.com/xljiulang/RecyclableBuffer/blob/master/RecyclableBuffer.Benchmarks/RecyclableBuffer.Benchmarks.WriteBufferBenchmark-report-github.md) 略微优于 [RecyclableMemoryStream](https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream)。
+在单次复用、并行复用和异步并行复用三种场景中 RecyclableBuffer 的 [Benchmark 成绩](https://github.com/xljiulang/RecyclableBuffer/tree/master/RecyclableBuffer.Benchmarks/results) 都略微优于 [RecyclableMemoryStream](https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream)。
 
 
 ### 使用 SingleSegmentBufferWriter

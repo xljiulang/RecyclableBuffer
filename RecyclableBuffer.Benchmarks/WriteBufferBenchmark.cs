@@ -1,7 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using DotNext.Buffers;
 using Microsoft.IO;
-using RecyclableBuffer.Buckets;
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
@@ -12,10 +11,8 @@ namespace RecyclableBuffer.Benchmarks
     {
         const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
-        private static readonly ByteArrayBucket fixedSizeSpinLock = new FixedSizeSpinLockByteArrayBucket(ARRAY_LENGTH, 32);
-        private static readonly ByteArrayBucket fixedSizeStack = new FixedSizeStackByteArrayBucket(ARRAY_LENGTH, 32);
-        private static readonly ByteArrayBucket scalableSpinLock = new ScalableSpinLockByteArrayBucket(ARRAY_LENGTH);
-        private static readonly ByteArrayBucket scalableStack = new ScalableStackByteArrayBucket(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket scalableArrayBucket = ByteArrayBucket.Create(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket fixedSizeByteArrayBucket = ByteArrayBucket.Create(ARRAY_LENGTH, 32);
         private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
 
         [Params(1024, 8 * 1024, 512 * 1024)]
@@ -51,31 +48,17 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark]
-        public void MultipleSegmentBufferWriter_Scalable_SpinLock()
+        public void MultipleSegmentBufferWriter_Scalable()
         {
-            using var target = new MultipleSegmentBufferWriter(scalableSpinLock);
-            WriteBuffer(target);
-        }
-
-        [Benchmark]
-        public void MultipleSegmentBufferWriter_Scalable_Stack()
-        {
-            using var target = new MultipleSegmentBufferWriter(scalableStack);
+            using var target = new MultipleSegmentBufferWriter(scalableArrayBucket);
             WriteBuffer(target);
         }
 
 
         [Benchmark]
-        public void MultipleSegmentBufferWriter_FixedSize_SpinLock()
+        public void MultipleSegmentBufferWriter_FixedSize()
         {
-            using var target = new MultipleSegmentBufferWriter(fixedSizeSpinLock);
-            WriteBuffer(target);
-        }
-
-        [Benchmark]
-        public void MultipleSegmentBufferWriter_FixedSize_Stack()
-        {
-            using var target = new MultipleSegmentBufferWriter(fixedSizeStack);
+            using var target = new MultipleSegmentBufferWriter(fixedSizeByteArrayBucket);
             WriteBuffer(target);
         }
 

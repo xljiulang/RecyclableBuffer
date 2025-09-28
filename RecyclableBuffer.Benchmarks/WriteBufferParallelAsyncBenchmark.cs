@@ -2,22 +2,18 @@
 using DotNext.Buffers;
 using DotNext.IO;
 using Microsoft.IO;
-using RecyclableBuffer.Buckets;
 using System.Buffers;
 
 namespace RecyclableBuffer.Benchmarks
 {
-
     [MemoryDiagnoser]
     public class WriteBufferParallelAsyncBenchmark
     {
         const int COUNT = 1_0000;
         const int ARRAY_LENGTH = 128 * 1024;
         private static readonly RecyclableMemoryStreamManager manager = new();
-        private static readonly ByteArrayBucket fixedSizeSpinLock = new FixedSizeSpinLockByteArrayBucket(ARRAY_LENGTH, 32);
-        private static readonly ByteArrayBucket fixedSizeStack = new FixedSizeStackByteArrayBucket(ARRAY_LENGTH, 32);
-        private static readonly ByteArrayBucket scalableSpinLock = new ScalableSpinLockByteArrayBucket(ARRAY_LENGTH);
-        private static readonly ByteArrayBucket scalableStack = new ScalableStackByteArrayBucket(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket scalableArrayBucket = ByteArrayBucket.Create(ARRAY_LENGTH);
+        private static readonly ByteArrayBucket fixedSizeByteArrayBucket = ByteArrayBucket.Create(ARRAY_LENGTH, 32);
         private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
         private static readonly ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 };
 
@@ -69,11 +65,11 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark]
-        public async Task MultipleSegmentBufferWriter_Scalable_SpinLock()
+        public async Task MultipleSegmentBufferWriter_Scalable()
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(scalableSpinLock);
+                using var target = new MultipleSegmentBufferWriter(scalableArrayBucket);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.AsReadableStream(), ct);
@@ -81,35 +77,11 @@ namespace RecyclableBuffer.Benchmarks
         }
 
         [Benchmark]
-        public async Task MultipleSegmentBufferWriter_Scalable_Stack()
+        public async Task MultipleSegmentBufferWriter_FixedSize()
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(scalableStack);
-                target.Write(this._buffer);
-
-                await SendToAsync(target.AsReadableStream(), ct);
-            });
-        }
-
-        [Benchmark]
-        public async Task MultipleSegmentBufferWriter_FixedSize_SpinLock()
-        {
-            await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
-            {
-                using var target = new MultipleSegmentBufferWriter(fixedSizeSpinLock);
-                target.Write(this._buffer);
-
-                await SendToAsync(target.AsReadableStream(), ct);
-            });
-        }
-
-        [Benchmark]
-        public async Task MultipleSegmentBufferWriter_FixedSize_Stack()
-        {
-            await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
-            {
-                using var target = new MultipleSegmentBufferWriter(fixedSizeStack);
+                using var target = new MultipleSegmentBufferWriter(fixedSizeByteArrayBucket);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.AsReadableStream(), ct);

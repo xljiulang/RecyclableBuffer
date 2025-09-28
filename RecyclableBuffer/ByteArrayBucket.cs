@@ -76,21 +76,21 @@ namespace RecyclableBuffer
         public abstract void Return(byte[] array);
 
         /// <summary>
-        /// 创建一个可扩展的字节数组桶实例。
+        /// 创建一个可扩容的字节数组桶实例。
         /// </summary>
         /// <param name="arrayLength">桶中每个字节数组的长度（字节）。</param>
-        /// <returns>可扩展的字节数组桶实例。</returns>
+        /// <returns>可扩容的字节数组桶实例。</returns>
         public static ByteArrayBucket Create(int arrayLength)
         {
             return new ScalableByteArrayBucket(arrayLength);
         }
 
         /// <summary>
-        /// 创建一个固定大小的字节数组桶实例。
+        /// 创建一个固定容量的字节数组桶实例。
         /// </summary>
         /// <param name="arrayLength">桶中每个字节数组的长度（字节）。</param>
         /// <param name="arrayCount">桶中最大可存储的字节数组数量。</param>
-        /// <returns>固定大小的字节数组桶实例。</returns>
+        /// <returns>固定容量的字节数组桶实例。</returns>
         public static ByteArrayBucket Create(int arrayLength, int arrayCount)
         {
             return new FixedSizeByteArrayBucket(arrayLength, arrayCount);

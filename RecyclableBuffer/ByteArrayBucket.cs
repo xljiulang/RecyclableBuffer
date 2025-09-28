@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 
 namespace RecyclableBuffer
@@ -134,65 +135,91 @@ namespace RecyclableBuffer
         }
 
         /// <summary>
-        /// 使用 <see cref="ConcurrentStack{T}"/> 实现的固定大小的字节数组桶。 
+        /// 固定大小字节数组桶，支持自动扩容和线程安全的租用与归还操作。
         /// <para>当桶已满时，归还的数组将被丢弃。</para>
         /// </summary>
         private sealed class FixedSizeByteArrayBucket : ByteArrayBucket
         {
             /// <summary>
-            /// 当前桶中已存储的字节数组数量。
+            /// 当前桶中可用缓冲区的索引。
             /// </summary>
-            private int _count;
+            private int _index = 0;
 
             /// <summary>
-            /// 桶允许存储的最大字节数组数量。
+            /// 用于保护缓冲区数组的自旋锁。
             /// </summary>
-            private readonly int _arrayCount;
+            private SpinLock _lock = new(Debugger.IsAttached);
 
             /// <summary>
-            /// 用于存储可复用字节数组的线程安全栈。
+            /// 存储可复用的字节数组缓冲区。
             /// </summary>
-            private readonly ConcurrentStack<byte[]> _arrayStack = [];
+            private readonly byte[]?[] _buffers;
 
             /// <summary>
             /// 初始化 <see cref="FixedSizeByteArrayBucket"/> 实例。
             /// </summary>
-            /// <param name="arrayLength">每个字节数组的长度（字节）。</param>
-            /// <param name="arrayCount">桶中最大可存储的字节数组数量。</param>
+            /// <param name="arrayLength">每个数组的长度。</param>
+            /// <param name="arrayCount">数组数量。</param>
             public FixedSizeByteArrayBucket(int arrayLength, int arrayCount)
                 : base(arrayLength)
             {
-                this._arrayCount = arrayCount;
+                this._buffers = new byte[arrayCount][];
             }
 
             /// <summary>
-            /// 从桶中租用一个字节数组。如果桶中有可用数组则返回，否则新建一个数组。
+            /// 从桶中租用一个字节数组，如果桶已满则自动扩容。
             /// </summary>
             /// <returns>租借到的字节数组。</returns>
             public override byte[] Rent()
             {
-                if (this._arrayStack.TryPop(out var array))
+                var lockTaken = false;
+                var array = default(byte[]);
+
+                try
                 {
-                    Interlocked.Decrement(ref this._count);
-                    return array;
+                    this._lock.Enter(ref lockTaken);
+
+                    if (this._index < this._buffers.Length)
+                    {
+                        ref var arrayRef = ref this._buffers[this._index];
+                        array = arrayRef;
+                        arrayRef = null;
+                        this._index += 1;
+                    }
+                }
+                finally
+                {
+                    if (lockTaken)
+                    {
+                        this._lock.Exit(false);
+                    }
                 }
 
-                return new byte[this.ArrayLength];
+                return array ?? new byte[this.ArrayLength];
             }
 
             /// <summary>
-            /// 将字节数组归还到桶中以供复用。如果桶已满则丢弃该数组。
+            /// 将字节数组归还到桶中，供后续复用。
             /// </summary>
             /// <param name="array">要归还的字节数组。</param>
             public override void Return(byte[] array)
             {
-                if (Interlocked.Increment(ref this._count) <= this._arrayCount)
+                bool lockTaken = false;
+                try
                 {
-                    this._arrayStack.Push(array);
+                    this._lock.Enter(ref lockTaken);
+                    if (this._index != 0)
+                    {
+                        this._index -= 1;
+                        this._buffers[this._index] = array;
+                    }
                 }
-                else
+                finally
                 {
-                    Interlocked.Decrement(ref this._count);
+                    if (lockTaken)
+                    {
+                        this._lock.Exit(false);
+                    }
                 }
             }
         }

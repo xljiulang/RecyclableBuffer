@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using DotNext.Buffers;
+using DotNext.IO;
 using Microsoft.IO;
 using RecyclableBuffer.Buckets;
 using System.Buffers;
@@ -39,7 +40,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new SingleSegmentBufferWriter(ARRAY_LENGTH);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.WrittenSequence, ct);
+                await SendToAsync(target.AsReadableStream(), ct);
             });
         }
 
@@ -51,7 +52,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.WrittenSequence, ct);
+                await SendToAsync(target.AsReadableStream(), ct);
             });
         }
 
@@ -63,7 +64,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH, configurableArrayPool);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.WrittenSequence, ct);
+                await SendToAsync(target.AsReadableStream(), ct);
             });
         }
 
@@ -75,7 +76,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new MultipleSegmentBufferWriter(scalableSpinLock);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.WrittenSequence, ct);
+                await SendToAsync(target.AsReadableStream(), ct);
             });
         }
 
@@ -87,7 +88,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new MultipleSegmentBufferWriter(scalableStack);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.WrittenSequence, ct);
+                await SendToAsync(target.AsReadableStream(), ct);
             });
         }
 
@@ -99,7 +100,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new MultipleSegmentBufferWriter(fixedSizeSpinLock);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.WrittenSequence, ct);
+                await SendToAsync(target.AsReadableStream(), ct);
             });
         }
 
@@ -111,7 +112,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new MultipleSegmentBufferWriter(fixedSizeStack);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.WrittenSequence, ct);
+                await SendToAsync(target.AsReadableStream(), ct);
             });
         }
 
@@ -123,7 +124,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = manager.GetStream();
                 target.Write(this._buffer);
 
-                await SendToAsync(target.GetReadOnlySequence(), ct);
+                await SendToAsync(target, ct);
             });
         }
 
@@ -136,7 +137,7 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new PoolingArrayBufferWriter<byte>();
                 target.Write(this._buffer);
 
-                await SendToAsync(new ReadOnlySequence<byte>(target.WrittenMemory), ct);
+                await SendToAsync(target.WrittenMemory.AsStream(), ct);
             });
         }
 
@@ -148,12 +149,16 @@ namespace RecyclableBuffer.Benchmarks
                 using var target = new SparseBufferWriter<byte>(ARRAY_LENGTH);
                 target.Write(this._buffer);
 
-                await SendToAsync(target.ToReadOnlySequence(), ct);
+                await SendToAsync(target.AsStream(readable: true), ct);
             });
         }
 
-        protected virtual async ValueTask SendToAsync(ReadOnlySequence<byte> sequence, CancellationToken cancellationToken)
+        protected virtual async ValueTask SendToAsync(Stream readableStream, CancellationToken cancellationToken)
         {
+            // 这里不做任何实际操作，只模拟异步等待
+            // 因为实际应用中，写入操作通常是异步的
+            // 异步会导致缓冲区的租用和归还行为大概率产生在不同的线程上
+            // 而不同的 ArrayPool 模型在这种场景下的表现差异更明显
             await Task.Yield();
         }
     }

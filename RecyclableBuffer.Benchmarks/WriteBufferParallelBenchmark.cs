@@ -1,10 +1,8 @@
-﻿using System.Buffers;
-
-namespace RecyclableBuffer.Benchmarks
+﻿namespace RecyclableBuffer.Benchmarks
 {
     public class WriteBufferParallelBenchmark : WriteBufferParallelAsyncBenchmark
     {
-        protected override ValueTask SendToAsync(ReadOnlySequence<byte> sequence, CancellationToken cancellationToken)
+        protected override ValueTask SendToAsync(Stream readableStream, CancellationToken cancellationToken)
         {
             return ValueTask.CompletedTask;
         }

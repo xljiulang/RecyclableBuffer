@@ -1,4 +1,3 @@
-using RecyclableBuffer.Buckets;
 using System.Buffers;
 
 namespace RecyclableBuffer.Tests
@@ -6,7 +5,7 @@ namespace RecyclableBuffer.Tests
     public class MultipleSegmentBufferWriterTests
     {
         private const int COUNT = 10;
-        private static readonly ByteArrayBucket byteArrayBucket = new ScalableSpinLockByteArrayBucket(128 * 1024);
+        private static readonly ByteArrayBucket byteArrayBucket = ByteArrayBucket.Create(128 * 1024);
 
         [Fact]
         public void Constructor_InitializesWithDefaultPool()

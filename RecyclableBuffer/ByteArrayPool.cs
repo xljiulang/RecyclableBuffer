@@ -97,16 +97,16 @@ namespace RecyclableBuffer
             }
 
             ref var tsArrayRef = ref tsBucket[this._arrayBucket.BucketIndex];
-            var tsArray = tsArrayRef;
-
-            // 如果线程本地存储的桶已被占用，则归还至共享桶
-            if (tsArray != null)
+            if (tsArrayRef == null)
             {
-                this._arrayBucket.Return(tsArray);
+                // 将当前数组存入线程本地存储的桶
+                tsArrayRef = array;
             }
-
-            // 将当前数组存入线程本地存储的桶
-            tsArrayRef = array;
+            else
+            {
+                // 线程本地存储的桶已满，归还至共享桶
+                this._arrayBucket.Return(array);
+            }
         }
     }
 }

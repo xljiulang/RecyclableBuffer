@@ -3,8 +3,6 @@ using DotNext.Buffers;
 using Microsoft.IO;
 using RecyclableBuffer.Buckets;
 using System.Buffers;
-using System.Net;
-using System.Net.Sockets;
 
 namespace RecyclableBuffer.Benchmarks
 {
@@ -21,7 +19,6 @@ namespace RecyclableBuffer.Benchmarks
         private static readonly ByteArrayBucket scalableStack = new ScalableStackByteArrayBucket(ARRAY_LENGTH);
         private static readonly ArrayPool<byte> configurableArrayPool = ArrayPool<byte>.Create(ARRAY_LENGTH, 100);
         private static readonly ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount / 2 };
-        private static readonly IPEndPoint remoteEndPoint = new(IPAddress.Loopback, 443);
 
         [Params(1024, 8 * 1024, 512 * 1024)]
         public int BufferSize = 1024;
@@ -157,23 +154,7 @@ namespace RecyclableBuffer.Benchmarks
 
         protected virtual async ValueTask SendToAsync(ReadOnlySequence<byte> sequence, CancellationToken cancellationToken)
         {
-            const int CHUNK_SIZE = 8 * 1024;
-            using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            while (sequence.Length > CHUNK_SIZE)
-            {
-                var data = sequence.Slice(0, CHUNK_SIZE);
-                foreach (var memory in data)
-                {
-                    await socket.SendToAsync(memory, remoteEndPoint, cancellationToken);
-                }
-                sequence = sequence.Slice(data.End);
-            }
-
-            foreach (var memory in sequence)
-            {
-                await socket.SendToAsync(memory, remoteEndPoint, cancellationToken);
-            }
+            await Task.Yield();
         }
     }
 }

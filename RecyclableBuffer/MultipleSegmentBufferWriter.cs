@@ -76,15 +76,6 @@ namespace RecyclableBuffer
         }
 
         /// <summary>
-        /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用 <see cref="ArrayPool{Byte}.Shared"/> 缓冲区池。
-        /// </summary> 
-        /// <param name="arrayLength">每个缓冲区的字节数组长度</param>
-        public MultipleSegmentBufferWriter(int arrayLength)
-            : this(arrayLength, ArrayPool<byte>.Shared)
-        {
-        }
-
-        /// <summary>
         /// 初始化 <see cref="MultipleSegmentBufferWriter"/> 实例，使用指定的 <see cref="ByteArrayBucket"/> 缓冲区桶。
         /// </summary>
         /// <param name="arrayBucket">用于存储和复用字节数组的桶，不能为空。</param>

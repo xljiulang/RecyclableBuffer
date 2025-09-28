@@ -49,7 +49,7 @@ namespace RecyclableBuffer.Benchmarks
         {
             await Parallel.ForAsync(0, COUNT, parallelOptions, async (_, ct) =>
             {
-                using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH);
+                using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH, ArrayPool<byte>.Shared);
                 target.Write(this._buffer);
 
                 await SendToAsync(target.AsReadableStream(), ct);

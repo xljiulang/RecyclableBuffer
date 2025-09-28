@@ -39,7 +39,7 @@ namespace RecyclableBuffer.Benchmarks
         [Benchmark(Baseline = true)]
         public void MultipleSegmentBufferWriter_Shared()
         {
-            using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH);
+            using var target = new MultipleSegmentBufferWriter(ARRAY_LENGTH, ArrayPool<byte>.Shared);
             WriteBuffer(target);
         }
 

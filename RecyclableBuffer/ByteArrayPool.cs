@@ -71,13 +71,7 @@ namespace RecyclableBuffer
         /// <param name="clearArray">是否清空数组内容。</param>
         public override void Return(byte[] array, bool clearArray = false)
         {
-            var arrayLength = this._arrayBucket.ArrayLength;
-            if (array.Length < arrayLength)
-            {
-                return;
-            }
-
-            if (array.Length > arrayLength)
+            if (array.Length != this._arrayBucket.ArrayLength)
             {
                 Shared.Return(array, clearArray);
                 return;
